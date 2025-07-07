@@ -5,7 +5,7 @@ celery_app = Celery(
     "attendee_fastapi",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
-    include=["app.jobs.tasks"]
+    include=["app.jobs.tasks"],
 )
 
 # Configure Celery
@@ -19,4 +19,3 @@ celery_app.conf.update(
 )
 
 celery_app.autodiscover_tasks(["app.jobs"])
-

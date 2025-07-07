@@ -1,0 +1,128 @@
+{
+  "success": "Operation completed successfully",
+  "error": "An error occurred",
+  "not_found": "Resource not found",
+  "validation_error": "Validation failed",
+  "unauthorized": "Unauthorized access",
+  "forbidden": "Access forbidden",
+  "user_not_found": "User not found",
+  "organization_not_found": "Organization not found",
+  "project_not_found": "Project not found",
+  "bot_not_found": "Bot not found",
+  "job_not_found": "Job not found",
+  "invalid_credentials": "Invalid credentials",
+  "token_expired": "Token has expired",
+  "invalid_token": "Invalid token",
+  "insufficient_permissions": "Insufficient permissions",
+  "invalid_email_format": "Invalid email format",
+  "password_too_weak": "Password is too weak",
+  "password_needs_uppercase": "Password must contain at least one uppercase letter",
+  "password_needs_lowercase": "Password must contain at least one lowercase letter",
+  "password_needs_digit": "Password must contain at least one digit",
+  "password_needs_special_char": "Password must contain at least one special character",
+  "username_length_invalid": "Username must be between 3 and 50 characters",
+  "username_format_invalid": "Username can only contain letters, numbers, hyphens and underscores",
+  "email_already_exists": "Email already exists",
+  "username_already_exists": "Username already exists",
+  "required_fields_missing": "Required fields are missing",
+  "user_account_inactive": "User account is inactive",
+  "current_password_incorrect": "Current password is incorrect",
+  "search_query_too_short": "Search query must be at least 2 characters",
+  "user_created_successfully": "User created successfully",
+  "user_registered_successfully": "User registered successfully",
+  "user_updated_successfully": "User updated successfully",
+  "user_deleted_successfully": "User deleted successfully",
+  "user_activated_successfully": "User activated successfully",
+  "user_deactivated_successfully": "User deactivated successfully",
+  "user_suspended_successfully": "User suspended successfully",
+  "email_verified_successfully": "Email verified successfully",
+  "login_successful": "Login successful",
+  "password_changed_successfully": "Password changed successfully",
+  "token_refreshed_successfully": "Token refreshed successfully",
+  "logout_successful": "Logout successful",
+  "database_error": "Database error occurred",
+  "internal_server_error": "Internal server error",
+  "organizations": {
+    "validation": {
+      "name_too_short": "Organization name must be at least 2 characters",
+      "invalid_credits": "Credits must be a non-negative number",
+      "invalid_credit_amount": "Credit amount must be positive",
+      "insufficient_credits": "Insufficient credits for this operation",
+      "invalid_operation": "Invalid operation. Must be 'add' or 'deduct'"
+    },
+    "errors": {
+      "not_found": "Organization not found",
+      "name_already_exists": "Organization name already exists"
+    },
+    "messages": {
+      "created_successfully": "Organization created successfully",
+      "updated_successfully": "Organization updated successfully",
+      "deleted_successfully": "Organization deleted successfully",
+      "retrieved_successfully": "Organization retrieved successfully",
+      "suspended_successfully": "Organization suspended successfully",
+      "activated_successfully": "Organization activated successfully",
+      "credits_updated_successfully": "Credits updated successfully",
+      "stats_retrieved_successfully": "Organization statistics retrieved successfully",
+      "low_credits_retrieved_successfully": "Low credit organizations retrieved successfully"
+    }
+  },
+  "projects": {
+    "validation": {
+      "name_too_short": "Project name must be at least 2 characters",
+      "organization_required": "Organization ID is required",
+      "cannot_create_api_key": "Cannot create API key for inactive project",
+      "api_key_name_too_short": "API key name must be at least 2 characters"
+    },
+    "errors": {
+      "not_found": "Project not found",
+      "name_already_exists": "Project name already exists in this organization",
+      "api_key_not_found": "API key not found"
+    },
+    "messages": {
+      "created_successfully": "Project created successfully",
+      "updated_successfully": "Project updated successfully",
+      "deleted_successfully": "Project deleted successfully",
+      "retrieved_successfully": "Project retrieved successfully",
+      "archived_successfully": "Project archived successfully",
+      "activated_successfully": "Project activated successfully",
+      "stats_retrieved_successfully": "Project statistics retrieved successfully",
+      "api_key_created_successfully": "API key created successfully",
+      "api_keys_retrieved_successfully": "API keys retrieved successfully",
+      "api_key_disabled_successfully": "API key disabled successfully",
+      "api_key_enabled_successfully": "API key enabled successfully",
+      "api_key_valid": "API key is valid",
+      "api_key_invalid": "API key is invalid or expired"
+    }
+  },
+  "bots": {
+    "validation": {
+      "name_too_short": "Bot name must be at least 2 characters",
+      "meeting_url_required": "Meeting URL is required",
+      "project_required": "Project ID is required",
+      "invalid_meeting_url": "Invalid meeting URL format",
+      "cannot_join_meeting": "Bot cannot join meeting in current state",
+      "cannot_leave_meeting": "Bot cannot leave meeting in current state",
+      "bot_not_active": "Bot is not in an active state"
+    },
+    "errors": {
+      "not_found": "Bot not found"
+    },
+    "messages": {
+      "created_successfully": "Bot created successfully",
+      "updated_successfully": "Bot updated successfully",
+      "deleted_successfully": "Bot deleted successfully",
+      "retrieved_successfully": "Bot retrieved successfully",
+      "join_requested_successfully": "Bot join request sent successfully",
+      "leave_requested_successfully": "Bot leave request sent successfully",
+      "recording_started_successfully": "Bot recording started successfully",
+      "heartbeat_updated_successfully": "Bot heartbeat updated successfully",
+      "stats_retrieved_successfully": "Bot statistics retrieved successfully",
+      "events_retrieved_successfully": "Bot events retrieved successfully"
+    }
+  },
+  "jobs": {
+    "messages": {
+      "retrieved_successfully": "Jobs retrieved successfully"
+    }
+  }
+} 

@@ -1,9 +1,12 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/attendee_fastapi_db"
+    DATABASE_URL: str = (
+        "postgresql+asyncpg://user:password@localhost:5432/attendee_fastapi_db"
+    )
     SECRET_KEY: str = "your-super-secret-key-for-jwt"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # For regular access tokens
@@ -18,6 +21,5 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = ""
     GOOGLE_REDIRECT_URI: str = ""
 
+
 settings = Settings()
-
-
