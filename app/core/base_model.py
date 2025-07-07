@@ -64,6 +64,18 @@ class PagingInfo(BaseModel):
     page_size: int
 
 
+class PaginationParams(BaseModel):
+    """Pagination parameters for backward compatibility"""
+
+    page: int = Field(default=1, ge=1, description="Page number")
+    limit: int = Field(default=20, ge=1, le=100, description="Items per page")
+
+    @property
+    def offset(self) -> int:
+        """Calculate offset from page and limit"""
+        return (self.page - 1) * self.limit
+
+
 T = TypeVar("T")
 
 

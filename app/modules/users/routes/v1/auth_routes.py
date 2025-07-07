@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, status
 from app.core.base_model import APIResponse
 from app.exceptions.handlers import handle_exceptions
 from app.modules.users.repository.user_repo import UserRepo
+from app.modules.users.dependencies import get_user_repo
 from app.modules.users.schemas import (
     CreateUserRequest,
     LoginRequest,
@@ -17,17 +18,17 @@ from app.modules.users.schemas import (
 from app.middlewares.translation_manager import _
 from app.utils.security import create_access_token
 
-route = APIRouter(prefix="/auth", tags=["authentication"])
+router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
-@route.post(
+@router.post(
     "/register",
     response_model=APIResponse[UserResponse],
     status_code=status.HTTP_201_CREATED,
 )
 @handle_exceptions
 async def register_user(
-    request: CreateUserRequest, repo: UserRepo = Depends()
+    request: CreateUserRequest, repo: UserRepo = Depends(get_user_repo)
 ) -> APIResponse[UserResponse]:
     """Register a new user"""
     user_data = request.dict()
@@ -38,10 +39,10 @@ async def register_user(
     )
 
 
-@route.post("/login", response_model=APIResponse[LoginResponse])
+@router.post("/login", response_model=APIResponse[LoginResponse])
 @handle_exceptions
 async def login_user(
-    request: LoginRequest, repo: UserRepo = Depends()
+    request: LoginRequest, repo: UserRepo = Depends(get_user_repo)
 ) -> APIResponse[LoginResponse]:
     """Login user with email/username and password"""
     # Authenticate user
@@ -68,12 +69,12 @@ async def login_user(
     return APIResponse.success(data=login_response, message=_("login_successful"))
 
 
-@route.post("/change-password", response_model=APIResponse[None])
+@router.post("/change-password", response_model=APIResponse[None])
 @handle_exceptions
 async def change_password(
     request: ChangePasswordRequest,
     current_user_id: UUID,  # This would come from JWT token in real implementation
-    repo: UserRepo = Depends(),
+    repo: UserRepo = Depends(get_user_repo),
 ) -> APIResponse[None]:
     """Change user password"""
     await repo.change_password(
@@ -83,11 +84,11 @@ async def change_password(
     return APIResponse.success(message=_("password_changed_successfully"))
 
 
-@route.get("/me", response_model=APIResponse[UserProfileResponse])
+@router.get("/me", response_model=APIResponse[UserProfileResponse])
 @handle_exceptions
 async def get_current_user(
     current_user_id: UUID,  # This would come from JWT token in real implementation
-    repo: UserRepo = Depends(),
+    repo: UserRepo = Depends(get_user_repo),
 ) -> APIResponse[UserProfileResponse]:
     """Get current user profile"""
     user = await repo.get_user_by_id(current_user_id)
@@ -97,11 +98,11 @@ async def get_current_user(
     )
 
 
-@route.post("/refresh", response_model=APIResponse[LoginResponse])
+@router.post("/refresh", response_model=APIResponse[LoginResponse])
 @handle_exceptions
 async def refresh_token(
     current_user_id: UUID,  # This would come from refresh token in real implementation
-    repo: UserRepo = Depends(),
+    repo: UserRepo = Depends(get_user_repo),
 ) -> APIResponse[LoginResponse]:
     """Refresh access token"""
     user = await repo.get_user_by_id(current_user_id)
@@ -129,7 +130,7 @@ async def refresh_token(
     )
 
 
-@route.post("/logout", response_model=APIResponse[None])
+@router.post("/logout", response_model=APIResponse[None])
 @handle_exceptions
 async def logout_user(
     current_user_id: UUID,  # This would come from JWT token in real implementation

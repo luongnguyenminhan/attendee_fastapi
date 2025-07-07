@@ -3,7 +3,7 @@ from sqlmodel import Session
 import hashlib
 import secrets
 
-from app.core.base_model import PaginationParams, PaginatedResponse
+from app.core.base_model import PaginatedResponse
 from app.exceptions.exception import (
     NotFoundException,
     ValidationException,
@@ -122,7 +122,8 @@ class ProjectRepo:
     async def get_projects_by_organization(
         self,
         organization_id: str,
-        pagination: PaginationParams,
+        skip: int = 0,
+        limit: int = 20,
         status: Optional[ProjectStatus] = None,
         search: Optional[str] = None,
     ) -> PaginatedResponse[Project]:
@@ -136,20 +137,20 @@ class ProjectRepo:
                     proj for proj in projects if search.lower() in proj.name.lower()
                 ]
             total = len(projects)
-            start = pagination.offset
-            end = start + pagination.limit
+            start = skip
+            end = start + limit
             items = projects[start:end]
         elif status:
             projects = await self.project_dal.get_by_status(status, organization_id)
             total = len(projects)
-            start = pagination.offset
-            end = start + pagination.limit
+            start = skip
+            end = start + limit
             items = projects[start:end]
         elif search:
             items = await self.project_dal.search_by_name(search, organization_id)
             total = len(items)
-            start = pagination.offset
-            end = start + pagination.limit
+            start = skip
+            end = start + limit
             items = items[start:end]
         else:
             # Get all by organization then paginate
@@ -157,16 +158,19 @@ class ProjectRepo:
                 organization_id
             )
             total = len(all_projects)
-            start = pagination.offset
-            end = start + pagination.limit
+            start = skip
+            end = start + limit
             items = all_projects[start:end]
+
+        page = (skip // limit) + 1
+        pages = (total + limit - 1) // limit
 
         return PaginatedResponse[Project](
             items=items,
             total=total,
-            page=pagination.page,
-            size=pagination.limit,
-            pages=(total + pagination.limit - 1) // pagination.limit,
+            page=page,
+            size=limit,
+            pages=pages,
         )
 
     async def archive_project(self, project_id: str) -> Project:

@@ -52,9 +52,7 @@ async def logging_middleware(request: Request, call_next: Callable) -> Response:
         process_time = time.time() - start_time
 
         # Log error
-        logger.error(
-            f"Request {request_id} failed: {str(e)} " f"after {process_time:.3f}s"
-        )
+        logger.error(f"Request {request_id} failed: {str(e)} after {process_time:.3f}s")
 
         # Return error response
         return JSONResponse(

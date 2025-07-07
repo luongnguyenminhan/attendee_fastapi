@@ -1,69 +1,151 @@
 version: '3.8'
 
 services:
-  db:
+  # PostgreSQL Database
+  postgres:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: attendee_fastapi_db
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: attendee_fastapi_user
+      POSTGRES_PASSWORD: attendee_fastapi_password
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    networks:
+      - attendee_network
     ports:
       - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d attendee_fastapi_db"]
+      test: ["CMD-SHELL", "pg_isready -U attendee_fastapi_user -d attendee_fastapi_db"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # Redis for Celery and Caching
   redis:
     image: redis:7-alpine
+    networks:
+      - attendee_network
     ports:
       - "6379:6379"
+    restart: unless-stopped
     volumes:
-      - redis_data:/data
+      - redis:/data/redis
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  backend:
+  # FastAPI Main Application
+  attendee-app:
     build:
       context: .
       dockerfile: Dockerfile
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     volumes:
-      - .:/app
+      - .:/attendee_fastapi
+    networks:
+      - attendee_network
     ports:
       - "8000:8000"
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql+asyncpg://user:password@db:5432/attendee_fastapi_db
+      - DATABASE_URL=postgresql+asyncpg://attendee_fastapi_user:attendee_fastapi_password@postgres:5432/attendee_fastapi_db
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=attendee_fastapi_user
+      - REDIS_URL=redis://redis:6379/5
       - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PYTHONPATH=/attendee_fastapi
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    restart: unless-stopped
 
-  celery_worker:
+  # Celery Worker for Background Tasks
+  attendee-worker:
     build:
       context: .
       dockerfile: Dockerfile
-    command: celery -A app.jobs.celery_app worker --loglevel=info
     volumes:
-      - .:/app
+      - .:/attendee_fastapi
+    networks:
+      - attendee_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://attendee_fastapi_user:attendee_fastapi_password@postgres:5432/attendee_fastapi_db
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=attendee_fastapi_user
+      - REDIS_URL=redis://redis:6379/5
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PYTHONPATH=/attendee_fastapi
+      # Bot automation environment
+      - DISPLAY=:99
+    command: ["celery", "-A", "app.jobs.celery_app", "worker", "-l", "INFO"]
+    restart: unless-stopped
+
+  # Celery Beat Scheduler for Scheduled Tasks
+  attendee-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/attendee_fastapi
+    networks:
+      - attendee_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://attendee_fastapi_user:attendee_fastapi_password@postgres:5432/attendee_fastapi_db
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=attendee_fastapi_user
+      - REDIS_URL=redis://redis:6379/5
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PYTHONPATH=/attendee_fastapi
+    command: ["celery", "-A", "app.jobs.celery_app", "beat", "-l", "INFO"]
+    restart: unless-stopped
+
+  # Flower for Celery Monitoring (Optional)
+  attendee-flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/attendee_fastapi
+    networks:
+      - attendee_network
+    ports:
+      - "5555:5555"
     depends_on:
       - redis
-      - db
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - DATABASE_URL=postgresql+asyncpg://user:password@db:5432/attendee_fastapi_db
+      - PYTHONPATH=/attendee_fastapi
+    command: ["flower", "--app=app.jobs.celery_app", "--port=5555"]
+    restart: unless-stopped
+
+networks:
+  attendee_network:
+    driver: bridge
 
 volumes:
-  db_data:
-  redis_data:
+  postgres:
+  redis:
 
 

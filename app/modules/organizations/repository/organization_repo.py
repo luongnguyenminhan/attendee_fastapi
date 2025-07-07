@@ -1,7 +1,7 @@
 from typing import Optional, List, Dict, Any
 from sqlmodel import Session
 
-from app.core.base_model import PaginationParams, PaginatedResponse
+from app.core.base_model import PaginatedResponse
 from app.exceptions.exception import (
     NotFoundException,
     ValidationException,
@@ -106,7 +106,8 @@ class OrganizationRepo:
 
     async def get_organizations(
         self,
-        pagination: PaginationParams,
+        skip: int = 0,
+        limit: int = 20,
         status: Optional[OrganizationStatus] = None,
         search: Optional[str] = None,
     ) -> PaginatedResponse[Organization]:
@@ -120,30 +121,33 @@ class OrganizationRepo:
                     org for org in organizations if search.lower() in org.name.lower()
                 ]
             total = len(organizations)
-            start = pagination.offset
-            end = start + pagination.limit
+            start = skip
+            end = start + limit
             items = organizations[start:end]
         elif status:
             organizations = await self.dal.get_by_status(status)
             total = len(organizations)
-            start = pagination.offset
-            end = start + pagination.limit
+            start = skip
+            end = start + limit
             items = organizations[start:end]
         elif search:
             items = await self.dal.search_by_name(search)
             total = len(items)
-            start = pagination.offset
-            end = start + pagination.limit
+            start = skip
+            end = start + limit
             items = items[start:end]
         else:
-            items, total = await self.dal.get_paginated(pagination)
+            items, total = await self.dal.get_all_with_pagination(skip, limit)
+
+        page = (skip // limit) + 1
+        pages = (total + limit - 1) // limit
 
         return PaginatedResponse[Organization](
             items=items,
             total=total,
-            page=pagination.page,
-            size=pagination.limit,
-            pages=(total + pagination.limit - 1) // pagination.limit,
+            page=page,
+            size=limit,
+            pages=pages,
         )
 
     async def manage_credits(

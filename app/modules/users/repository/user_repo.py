@@ -1,10 +1,8 @@
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
-from fastapi import Depends
 from uuid import UUID
 import re
 
-from app.core.database import get_db
 from app.modules.users.dal.user_dal import UserDAL
 from app.modules.users.models.user_model import User, UserStatus, UserRole
 from app.exceptions.exception import (
@@ -20,7 +18,7 @@ from app.utils.security import get_password_hash, verify_password
 class UserRepo:
     """Repository layer for User business logic"""
 
-    def __init__(self, db: Session = Depends(get_db)):
+    def __init__(self, db: Session):
         self.db = db
         self.user_dal = UserDAL(db)
 

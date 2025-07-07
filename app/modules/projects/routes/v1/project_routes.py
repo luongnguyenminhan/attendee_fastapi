@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlmodel import Session
 
 from app.core.database import get_session
-from app.core.base_model import PaginationParams
+from app.core.base_model import PagingInfo
 from app.exceptions.handlers import handle_exceptions
 from app.modules.users.models.user_model import User
 from app.modules.projects.repository.project_repo import ProjectRepo
@@ -79,11 +79,12 @@ async def get_projects_by_organization(
     """Get paginated list of projects by organization"""
     repo = ProjectRepo(session)
 
-    pagination = PaginationParams(page=page, limit=size)
+    skip = (page - 1) * size
 
     projects_page = await repo.get_projects_by_organization(
         organization_id=organization_id,
-        pagination=pagination,
+        skip=skip,
+        limit=size,
         status=status_filter,
         search=search,
     )

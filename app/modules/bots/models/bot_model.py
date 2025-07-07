@@ -3,9 +3,12 @@ from sqlmodel import Field, Relationship
 from sqlalchemy.dialects.postgresql import JSONB
 import random
 import string
+from uuid import UUID
+import os
+import math
 
 from app.core.base_model import BaseEntity
-from app.core.base_enums import BaseEnum
+from app.core.base_enums import BaseEnum, BotStates, RecordingTypes, MeetingTypes
 
 
 class MeetingType(BaseEnum):
@@ -61,14 +64,14 @@ class BotEventSubType(BaseEnum):
 
 
 class Bot(BaseEntity, table=True):
-    __tablename__ = "bot"
+    __tablename__ = "bots"
 
     # Core fields
     name: str = Field(default="My bot", max_length=255)
     meeting_url: str = Field(max_length=511, index=True)
     meeting_uuid: Optional[str] = Field(default=None, max_length=511)
     state: BotState = Field(default=BotState.READY, index=True)
-    project_id: str = Field(foreign_key="project.id", index=True)
+    project_id: UUID = Field(foreign_key="project.id", index=True)
 
     # Auto-generated object_id
     object_id: str = Field(
@@ -175,6 +178,110 @@ class Bot(BaseEntity, table=True):
         except:
             return None
 
+    def recording_type(self):
+        """Determine recording type from settings"""
+        recording_settings = self.settings.get("recording_settings", {})
+        if recording_settings.get("format") == "mp3":
+            return RecordingTypes.AUDIO_ONLY
+        return RecordingTypes.AUDIO_AND_VIDEO
+
+    def meeting_type(self):
+        """Determine meeting type from URL"""
+        if "zoom.us" in self.meeting_url:
+            return MeetingTypes.ZOOM
+        elif "meet.google.com" in self.meeting_url:
+            return MeetingTypes.GOOGLE_MEET
+        elif "teams.microsoft.com" in self.meeting_url:
+            return MeetingTypes.TEAMS
+        return None
+
+    def centicredits_consumed(self) -> int:
+        """Calculate credits consumed based on bot runtime"""
+        if (
+            self.first_heartbeat_timestamp is None
+            or self.last_heartbeat_timestamp is None
+        ):
+            return 0
+        if self.last_heartbeat_timestamp < self.first_heartbeat_timestamp:
+            return 0
+
+        seconds_active = self.last_heartbeat_timestamp - self.first_heartbeat_timestamp
+        # If first and last heartbeat are the same, assume 30 seconds
+        if self.last_heartbeat_timestamp == self.first_heartbeat_timestamp:
+            seconds_active = 30
+
+        hours_active = seconds_active / 3600
+        # Rate is 1 credit per hour
+        centicredits_active = hours_active * 100
+        return math.ceil(centicredits_active)
+
+    def cpu_request(self):
+        """Get CPU request based on meeting type and recording type"""
+        meeting_type = self.meeting_type()
+        recording_type = self.recording_type()
+
+        meeting_type_env_var_substring = {
+            MeetingTypes.GOOGLE_MEET: "GOOGLE_MEET",
+            MeetingTypes.TEAMS: "TEAMS",
+            MeetingTypes.ZOOM: "ZOOM",
+        }.get(meeting_type, "UNKNOWN")
+
+        recording_mode_env_var_substring = {
+            RecordingTypes.AUDIO_AND_VIDEO: "AUDIO_AND_VIDEO",
+            RecordingTypes.AUDIO_ONLY: "AUDIO_ONLY",
+        }.get(recording_type, "UNKNOWN")
+
+        env_var_name = f"{meeting_type_env_var_substring}_{recording_mode_env_var_substring}_BOT_CPU_REQUEST"
+
+        default_cpu_request = os.getenv("BOT_CPU_REQUEST", "4") or "4"
+        value_from_env_var = os.getenv(env_var_name, default_cpu_request)
+        if not value_from_env_var:
+            return default_cpu_request
+        return value_from_env_var
+
+    def k8s_pod_name(self):
+        """Generate Kubernetes pod name"""
+        return f"bot-{self.object_id.replace('_', '-')}"
+
+    # Transcription settings helper methods
+    def deepgram_model(self):
+        return (
+            self.settings.get("transcription_settings", {})
+            .get("deepgram", {})
+            .get("model", "nova-2")
+        )
+
+    def deepgram_language(self):
+        return (
+            self.settings.get("transcription_settings", {})
+            .get("deepgram", {})
+            .get("language", "multi")
+        )
+
+    def deepgram_detect_language(self):
+        return (
+            self.settings.get("transcription_settings", {})
+            .get("deepgram", {})
+            .get("detect_language", False)
+        )
+
+    def openai_transcription_model(self):
+        return (
+            self.settings.get("transcription_settings", {})
+            .get("openai", {})
+            .get("model", "whisper-1")
+        )
+
+    def openai_transcription_prompt(self):
+        return (
+            self.settings.get("transcription_settings", {})
+            .get("openai", {})
+            .get("prompt", None)
+        )
+
+    def __repr__(self):
+        return f"<Bot {self.object_id}: {self.name}>"
+
 
 class BotEvent(BaseEntity, table=True):
     __tablename__ = "botevent"
@@ -192,7 +299,7 @@ class BotEvent(BaseEntity, table=True):
     requested_bot_action_taken_at: Optional[str] = Field(default=None)
 
     # Foreign key
-    bot_id: str = Field(foreign_key="bot.id", index=True)
+    bot_id: UUID = Field(foreign_key="bots.id", index=True)
 
     # Auto-generated object_id
     object_id: str = Field(
@@ -244,7 +351,7 @@ class BotDebugScreenshot(BaseEntity, table=True):
     file_url: Optional[str] = Field(default=None, max_length=1000)
 
     # Foreign key
-    bot_event_id: str = Field(foreign_key="botevent.id", index=True)
+    bot_event_id: UUID = Field(foreign_key="botevent.id", index=True)
 
     # Auto-generated object_id
     object_id: str = Field(

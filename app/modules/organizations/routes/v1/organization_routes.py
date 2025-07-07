@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlmodel import Session
 
 from app.core.database import get_session
-from app.core.base_model import PaginationParams
+from app.core.base_model import PagingInfo
 from app.exceptions.handlers import handle_exceptions
 from app.modules.users.models.user_model import User
 from app.modules.users.repository.user_repo import UserRepo
@@ -73,10 +73,10 @@ async def get_organizations(
     """Get paginated list of organizations"""
     repo = OrganizationRepo(session)
 
-    pagination = PaginationParams(page=page, limit=size)
+    skip = (page - 1) * size
 
     organizations_page = await repo.get_organizations(
-        pagination=pagination, status=status_filter, search=search
+        skip=skip, limit=size, status=status_filter, search=search
     )
 
     # Convert entities to response schemas

@@ -5,8 +5,12 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     DATABASE_URL: str = (
-        "postgresql+asyncpg://user:password@localhost:5432/attendee_fastapi_db"
+        "postgresql://attendee_fastapi_user:attendee_fastapi_password@postgres:5432/attendee_fastapi_db"
     )
+    ASYNC_DATABASE_URL: str = (
+        "postgresql+asyncpg://attendee_fastapi_user:attendee_fastapi_password@postgres:5432/attendee_fastapi_db"
+    )
+    DATABASE_ECHO: bool = False
     SECRET_KEY: str = "your-super-secret-key-for-jwt"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # For regular access tokens
@@ -23,3 +27,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def get_settings() -> Settings:
+    """Get settings instance"""
+    return settings

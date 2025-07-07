@@ -49,7 +49,7 @@ class ManageCreditsRequest(RequestSchema):
 
     amount: int = Field(..., gt=0, description="Credit amount to add or deduct")
     operation: str = Field(
-        ..., regex="^(add|deduct)$", description="Operation: add or deduct"
+        ..., pattern="^(add|deduct)$", description="Operation: add or deduct"
     )
 
 
