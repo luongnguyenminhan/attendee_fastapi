@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.users.repository.user_repo import UserRepo
 
 
-async def get_database_session() -> AsyncSession: # type: ignore
+async def get_database_session() -> AsyncSession:  # type: ignore
     """Get database session locally to avoid circular import"""
     from app.core.database import get_session
 
