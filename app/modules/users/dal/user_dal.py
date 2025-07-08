@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, func
 from uuid import UUID
 
 from app.core.base_dal import BaseDAL
@@ -180,6 +180,49 @@ class UserDAL(BaseDAL[User]):
                 .limit(limit)
                 .all()
             )
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    async def get_all(self, skip: int = 0, limit: int = 100) -> List[User]:
+        """Get all users (non-deleted) with pagination"""
+        try:
+            return (
+                self.db.query(self.model)
+                .filter(self.model.is_deleted == False)
+                .offset(skip)
+                .limit(limit)
+                .all()
+            )
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    async def count_total(self) -> int:
+        """Count total non-deleted users"""
+        try:
+            return (
+                self.db.query(func.count(self.model.id))
+                .filter(self.model.is_deleted == False)
+                .scalar()
+            ) or 0
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    async def count_by_status(self, status: UserStatus) -> int:
+        """Count users by status"""
+        try:
+            return (
+                self.db.query(func.count(self.model.id))
+                .filter(
+                    and_(
+                        self.model.status == status,
+                        self.model.is_deleted == False
+                    )
+                )
+                .scalar()
+            ) or 0
         except Exception as e:
             self.db.rollback()
             raise e

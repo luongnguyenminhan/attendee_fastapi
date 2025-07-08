@@ -224,3 +224,15 @@ class UserRepo:
             return False
 
         return True
+
+    async def get_all_users(self, skip: int = 0, limit: int = 100) -> List[User]:
+        """Get all users with pagination"""
+        return await self.user_dal.get_all(skip, limit)
+
+    async def count_total_users(self) -> int:
+        """Count total users"""
+        return await self.user_dal.count_total()
+
+    async def count_active_users(self) -> int:
+        """Count active users"""
+        return await self.user_dal.count_by_status(UserStatus.ACTIVE)

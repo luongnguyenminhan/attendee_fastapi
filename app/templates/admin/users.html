@@ -10,8 +10,25 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">
                     <i class="bi bi-people"></i> All Users
+                    {% if user_stats %}
+                        <span class="badge bg-info ms-2">{{ user_stats.total_users }}</span>
+                    {% endif %}
                 </h6>
-                <div>
+                <div class="d-flex gap-2">
+                    <!-- Search Form -->
+                    <form method="GET" class="d-flex">
+                        <input type="text" name="search" class="form-control form-control-sm" 
+                               placeholder="Search users..." value="{{ search }}" 
+                               style="width: 200px;">
+                        <button type="submit" class="btn btn-outline-primary btn-sm ms-1">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        {% if search %}
+                        <a href="/admin/users" class="btn btn-outline-secondary btn-sm ms-1" title="Clear">
+                            <i class="bi bi-x"></i>
+                        </a>
+                        {% endif %}
+                    </form>
                     <button class="btn btn-primary btn-sm">
                         <i class="bi bi-plus"></i> Add User
                     </button>
@@ -23,9 +40,10 @@
                     <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
-                                <th>ID</th>
-                                <th>Username</th>
+                                <th>#</th>
+                                <th>User</th>
                                 <th>Email</th>
+                                <th>Role</th>
                                 <th>Organization</th>
                                 <th>Status</th>
                                 <th>Created</th>
@@ -36,48 +54,81 @@
                             {% for user in users %}
                             <tr>
                                 <td>
-                                    <code>{{ user.id }}</code>
+                                    <small class="text-muted">#{{ loop.index + ((page - 1) * page_size) }}</small>
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="avatar bg-primary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                            <small class="text-white fw-bold">{{ user.username[0].upper() }}</small>
+                                            <small class="text-white fw-bold">{{ user.username[0].upper() if user.username else user.email[0].upper() }}</small>
                                         </div>
                                         <div>
-                                            <div class="fw-bold">{{ user.username }}</div>
+                                            <div class="fw-bold">{{ user.username or 'N/A' }}</div>
+                                            <small class="text-muted">{{ user.full_name or user.first_name + ' ' + user.last_name if user.first_name or user.last_name else '' }}</small>
                                         </div>
                                     </div>
                                 </td>
-                                <td>{{ user.email }}</td>
+                                <td>
+                                    <div>{{ user.email }}</div>
+                                    {% if user.is_email_verified %}
+                                        <small class="text-success"><i class="bi bi-check-circle"></i> Verified</small>
+                                    {% else %}
+                                        <small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Unverified</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'warning' if user.role.value == 'admin' else 'primary' if user.role.value == 'moderator' else 'secondary' }}">
+                                        {{ user.role.value.title() }}
+                                    </span>
+                                    {% if user.is_superuser %}
+                                        <br><small class="badge bg-danger mt-1">Superuser</small>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if user.organization %}
                                         <span class="badge bg-info">{{ user.organization.name }}</span>
                                     {% else %}
-                                        <span class="text-muted">No organization</span>
+                                        <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if user.is_active %}
-                                        <span class="badge bg-success badge-status">Active</span>
+                                    {% if user.status.value == 'active' %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% elif user.status.value == 'inactive' %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% elif user.status.value == 'suspended' %}
+                                        <span class="badge bg-danger">Suspended</span>
+                                    {% elif user.status.value == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
                                     {% else %}
-                                        <span class="badge bg-danger badge-status">Inactive</span>
-                                    {% endif %}
-                                    {% if user.is_superuser %}
-                                        <span class="badge bg-warning badge-status">Admin</span>
+                                        <span class="badge bg-light text-dark">{{ user.status.value.title() }}</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <small class="text-muted">{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}</small>
+                                    <small class="text-muted">{{ user.create_date.strftime('%Y-%m-%d %H:%M') if user.create_date else 'N/A' }}</small>
                                 </td>
                                 <td class="table-actions">
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <button type="button" class="btn btn-outline-primary" title="View">
+                                        <button type="button" class="btn btn-outline-primary" title="View" 
+                                                onclick="viewUser('{{ user.id }}')">
                                             <i class="bi bi-eye"></i>
                                         </button>
-                                        <button type="button" class="btn btn-outline-warning" title="Edit">
+                                        <button type="button" class="btn btn-outline-warning" title="Edit"
+                                                onclick="editUser('{{ user.id }}')">
                                             <i class="bi bi-pencil"></i>
                                         </button>
-                                        <button type="button" class="btn btn-outline-danger" title="Delete">
+                                        {% if user.status.value == 'active' %}
+                                        <button type="button" class="btn btn-outline-secondary" title="Deactivate"
+                                                onclick="toggleUserStatus('{{ user.id }}', 'deactivate')">
+                                            <i class="bi bi-pause"></i>
+                                        </button>
+                                        {% else %}
+                                        <button type="button" class="btn btn-outline-success" title="Activate"
+                                                onclick="toggleUserStatus('{{ user.id }}', 'activate')">
+                                            <i class="bi bi-play"></i>
+                                        </button>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-outline-danger" title="Delete"
+                                                onclick="deleteUser('{{ user.id }}', '{{ user.username or user.email }}')">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
@@ -90,11 +141,19 @@
                 {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-people display-1 text-muted"></i>
-                    <h5 class="mt-3 text-muted">No users found</h5>
-                    <p class="text-muted">There are no users in the system yet.</p>
-                    <button class="btn btn-primary">
-                        <i class="bi bi-plus"></i> Create First User
-                    </button>
+                    {% if search %}
+                        <h5 class="mt-3 text-muted">No users found</h5>
+                        <p class="text-muted">No users match your search "{{ search }}"</p>
+                        <a href="/admin/users" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left"></i> Back to All Users
+                        </a>
+                    {% else %}
+                        <h5 class="mt-3 text-muted">No users found</h5>
+                        <p class="text-muted">There are no users in the system yet.</p>
+                        <button class="btn btn-primary">
+                            <i class="bi bi-plus"></i> Create First User
+                        </button>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -110,14 +169,21 @@
                 <h6 class="m-0 font-weight-bold text-primary">User Statistics</h6>
             </div>
             <div class="card-body">
+                {% if user_stats %}
                 <div class="row mb-2">
                     <div class="col-sm-8">Total Users:</div>
-                    <div class="col-sm-4 text-end"><strong>{{ users|length }}</strong></div>
+                    <div class="col-sm-4 text-end"><strong>{{ user_stats.total_users }}</strong></div>
                 </div>
                 <div class="row mb-2">
                     <div class="col-sm-8">Active Users:</div>
                     <div class="col-sm-4 text-end">
-                        <strong>{{ users|selectattr("is_active")|list|length }}</strong>
+                        <strong>{{ user_stats.active_users }}</strong>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-sm-8">Inactive Users:</div>
+                    <div class="col-sm-4 text-end">
+                        <strong>{{ user_stats.inactive_users }}</strong>
                     </div>
                 </div>
                 <div class="row mb-2">
@@ -132,6 +198,9 @@
                         <strong>{{ users|selectattr("organization")|list|length }}</strong>
                     </div>
                 </div>
+                {% else %}
+                <div class="text-muted">Statistics not available</div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -172,6 +241,34 @@ function filterUsers(type) {
         btn.classList.remove('active');
     });
     event.target.classList.add('active');
+}
+
+function viewUser(userId) {
+    // TODO: Implement user detail view
+    console.log('View user:', userId);
+    alert('View user detail functionality will be implemented');
+}
+
+function editUser(userId) {
+    // TODO: Implement user edit functionality
+    console.log('Edit user:', userId);
+    alert('Edit user functionality will be implemented');
+}
+
+function toggleUserStatus(userId, action) {
+    if (confirm(`Are you sure you want to ${action} this user?`)) {
+        // TODO: Implement API call to toggle user status
+        console.log(`${action} user:`, userId);
+        alert(`${action.charAt(0).toUpperCase() + action.slice(1)} user functionality will be implemented`);
+    }
+}
+
+function deleteUser(userId, username) {
+    if (confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+        // TODO: Implement API call to delete user
+        console.log('Delete user:', userId);
+        alert('Delete user functionality will be implemented');
+    }
 }
 </script>
 {% endblock %}

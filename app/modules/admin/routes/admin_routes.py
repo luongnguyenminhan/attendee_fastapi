@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 
 from app.core.database import get_session
 from app.modules.users.models.user_model import User
+from app.modules.users.repository.user_repo import UserRepo
+from app.modules.users.dependencies import get_user_repo
 from app.modules.organizations.models.organization_model import Organization
 from app.modules.projects.models.project_model import Project
 from app.modules.bots.models.bot_model import Bot
@@ -87,19 +89,65 @@ async def admin_dashboard(
 @router.get("/users", response_class=HTMLResponse)
 async def admin_users(
     request: Request,
-    db: AsyncSession = Depends(get_session),
+    page: int = 1,
+    page_size: int = 50,
+    search: str = None,
+    user_repo: UserRepo = Depends(get_user_repo),
     current_user=Depends(get_current_admin_user),
 ):
-    """Admin users management page"""
+    """Admin users management page with search and pagination"""
 
-    # Get all users
-    result = await db.execute(select(User))
-    users = result.scalars().all()
+    try:
+        skip = (page - 1) * page_size
 
-    return templates.TemplateResponse(
-        "admin/users.html",
-        {"request": request, "user": current_user, "users": users, "messages": []},
-    )
+        # Get users with optional search
+        if search:
+            users = await user_repo.search_users(search, skip, page_size)
+        else:
+            users = await user_repo.get_all_users(skip, page_size)
+
+        # Get user statistics for dashboard
+        total_users = await user_repo.count_total_users()
+        active_users = await user_repo.count_active_users()
+
+        user_stats = {
+            "total_users": total_users,
+            "active_users": active_users,
+            "inactive_users": total_users - active_users,
+        }
+
+        return templates.TemplateResponse(
+            "admin/users.html",
+            {
+                "request": request,
+                "user": current_user,
+                "users": users,
+                "user_stats": user_stats,
+                "page": page,
+                "page_size": page_size,
+                "search": search or "",
+                "messages": [],
+            },
+        )
+    except Exception as e:
+        print(f"Error in admin_users: {e}")
+        return templates.TemplateResponse(
+            "admin/users.html",
+            {
+                "request": request,
+                "user": current_user,
+                "users": [],
+                "user_stats": {
+                    "total_users": 0,
+                    "active_users": 0,
+                    "inactive_users": 0,
+                },
+                "page": page,
+                "page_size": page_size,
+                "search": search or "",
+                "messages": [{"type": "error", "text": "Lỗi khi tải dữ liệu users"}],
+            },
+        )
 
 
 @router.get("/bots", response_class=HTMLResponse)
