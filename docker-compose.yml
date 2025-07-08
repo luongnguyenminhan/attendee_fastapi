@@ -120,25 +120,25 @@ services:
     command: ["celery", "-A", "app.jobs.celery_app", "beat", "-l", "INFO"]
     restart: unless-stopped
 
-  # Flower for Celery Monitoring (Optional)
-  attendee-flower:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - .:/attendee_fastapi
-    networks:
-      - attendee_network
-    ports:
-      - "5555:5555"
-    depends_on:
-      - redis
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - PYTHONPATH=/attendee_fastapi
-    command: ["flower", "--app=app.jobs.celery_app", "--port=5555"]
-    restart: unless-stopped
+  # Flower for Celery Monitoring (Optional) - DISABLED due to compatibility issues
+  # attendee-flower:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   volumes:
+  #     - .:/attendee_fastapi
+  #   networks:
+  #     - attendee_network
+  #   ports:
+  #     - "5555:5555"
+  #   depends_on:
+  #     - redis
+  #   environment:
+  #     - CELERY_BROKER_URL=redis://redis:6379/0
+  #     - CELERY_RESULT_BACKEND=redis://redis:6379/0
+  #     - PYTHONPATH=/attendee_fastapi
+  #   command: ["/bin/bash", "-c", "cd /attendee_fastapi && python -m flower --app=app.jobs.celery_app flower --port=5555"]
+  #   restart: unless-stopped
 
 networks:
   attendee_network:

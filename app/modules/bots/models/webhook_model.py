@@ -1,4 +1,4 @@
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, TYPE_CHECKING
 from uuid import UUID
 from sqlmodel import Field, Relationship
 from sqlalchemy.dialects.postgresql import JSONB
@@ -11,6 +11,10 @@ from datetime import datetime, timedelta
 
 from app.core.base_model import BaseEntity
 from app.core.base_enums import WebhookTriggerTypes, WebhookDeliveryAttemptStatus
+from ...projects.models.project_model import Project
+
+if TYPE_CHECKING:
+    from .bot_model import Bot
 
 
 class WebhookSecret(BaseEntity, table=True):
@@ -30,8 +34,8 @@ class WebhookSecret(BaseEntity, table=True):
         index=True,
     )
 
-    # Relationships
-    project: "Project" = Relationship(back_populates="webhook_secrets")
+    # Relationships - use forward references for models defined later
+    project: Project = Relationship(back_populates="webhook_secrets")
     webhook_subscriptions: list["WebhookSubscription"] = Relationship(
         back_populates="webhook_secret"
     )
@@ -84,11 +88,9 @@ class WebhookSubscription(BaseEntity, table=True):
     )
 
     # Relationships
-    project: "Project" = Relationship(back_populates="webhook_subscriptions")
+    project: Project = Relationship(back_populates="webhook_subscriptions")
     bot: Optional["Bot"] = Relationship(back_populates="webhook_subscriptions")
-    webhook_secret: "WebhookSecret" = Relationship(
-        back_populates="webhook_subscriptions"
-    )
+    webhook_secret: WebhookSecret = Relationship(back_populates="webhook_subscriptions")
     delivery_attempts: list["WebhookDeliveryAttempt"] = Relationship(
         back_populates="webhook_subscription"
     )
@@ -146,8 +148,8 @@ class WebhookSubscription(BaseEntity, table=True):
 class WebhookDeliveryAttempt(BaseEntity, table=True):
     __tablename__ = "webhook_delivery_attempts"
 
-    # Core fields
-    webhook_subscription_id: str = Field(
+    # Core fields - Fix: webhook_subscription_id should be UUID, not str
+    webhook_subscription_id: UUID = Field(
         foreign_key="webhook_subscriptions.id", index=True
     )
     bot_id: Optional[UUID] = Field(foreign_key="bots.id", index=True, default=None)
@@ -182,7 +184,7 @@ class WebhookDeliveryAttempt(BaseEntity, table=True):
     )
 
     # Relationships
-    webhook_subscription: "WebhookSubscription" = Relationship(
+    webhook_subscription: WebhookSubscription = Relationship(
         back_populates="delivery_attempts"
     )
     bot: Optional["Bot"] = Relationship(back_populates="webhook_delivery_attempts")

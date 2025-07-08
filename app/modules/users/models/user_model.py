@@ -4,6 +4,7 @@ from uuid import UUID
 
 from app.core.base_model import BaseEntity
 from app.core.base_enums import BaseEnum
+from ...organizations.models.organization_model import Organization
 
 
 class UserRole(BaseEnum):
@@ -49,7 +50,7 @@ class User(BaseEntity, table=True):
     )
 
     # Relationships
-    organization: Optional["Organization"] = Relationship(back_populates="users")
+    organization: Optional[Organization] = Relationship(back_populates="users")
 
     @property
     def full_name(self) -> str:

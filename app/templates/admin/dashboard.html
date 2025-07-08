@@ -1,222 +1,186 @@
-{% extends "base/base.html" %}
+{% extends "admin/base.html" %}
 
-{% block title %}Admin Dashboard - {{ super() }}{% endblock %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
-{% block body_content %}
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-2 sidebar p-0">
-            <div class="d-flex flex-column p-3">
-                <!-- Logo -->
-                <div class="text-center mb-4">
-                    <img src="/static/images/logo_with_text.svg" alt="Attendee" class="img-fluid" style="max-height: 60px;">
+{% block content %}
+<div class="row mb-4">
+    <!-- Statistics Cards -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stat h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Users</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_users }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-people fa-2x text-gray-300"></i>
+                    </div>
                 </div>
-                
-                <!-- User Info -->
-                <div class="mb-3 p-2 bg-light rounded text-center">
-                    <div class="fw-bold">{{ user.username if user else 'Admin' }}</div>
-                    <small class="text-muted">{{ user.email if user else 'admin@attendee.dev' }}</small>
-                </div>
-
-                <!-- Navigation -->
-                <nav class="nav nav-pills flex-column">
-                    <a class="nav-link active" href="/admin/dashboard">
-                        <i class="bi bi-house"></i> Dashboard
-                    </a>
-                    <a class="nav-link" href="/admin/users">
-                        <i class="bi bi-people"></i> Users
-                    </a>
-                    <a class="nav-link" href="/admin/organizations">
-                        <i class="bi bi-building"></i> Organizations
-                    </a>
-                    <a class="nav-link" href="/admin/projects">
-                        <i class="bi bi-folder"></i> Projects
-                    </a>
-                    <a class="nav-link" href="/admin/bots">
-                        <i class="bi bi-robot"></i> Bots
-                    </a>
-                    <a class="nav-link" href="/admin/webhooks">
-                        <i class="bi bi-send"></i> Webhooks
-                    </a>
-                    <a class="nav-link" href="/admin/transcriptions">
-                        <i class="bi bi-file-text"></i> Transcriptions
-                    </a>
-                    <hr>
-                    <a class="nav-link" href="/admin/settings">
-                        <i class="bi bi-gear"></i> Settings
-                    </a>
-                    <a class="nav-link" href="/api/v1/auth/logout">
-                        <i class="bi bi-box-arrow-right"></i> Logout
-                    </a>
-                </nav>
             </div>
         </div>
+    </div>
 
-        <!-- Main Content -->
-        <div class="col-md-10 p-0">
-            <!-- Header -->
-            <div class="admin-header">
-                <div class="container-fluid">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="h3 mb-0">Admin Dashboard</h1>
-                            <p class="mb-0">Quản lý hệ thống Attendee</p>
-                        </div>
-                        <div>
-                            <button class="btn btn-light btn-sm" onclick="location.reload()">
-                                <i class="bi bi-arrow-clockwise"></i> Refresh
-                            </button>
-                        </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stat h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Organizations</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_organizations }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-building fa-2x text-gray-300"></i>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Dashboard Content -->
-            <div class="container-fluid p-4">
-                <!-- Breadcrumb -->
-                <nav aria-label="breadcrumb" class="admin-breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item active">Dashboard</li>
-                    </ol>
-                </nav>
-
-                <!-- Statistics Cards -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="stat-number">{{ stats.total_users if stats else '0' }}</div>
-                            <div class="stat-label">Total Users</div>
-                            <small class="text-muted">
-                                <i class="bi bi-people"></i> Registered users
-                            </small>
-                        </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stat h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Projects</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_projects }}</div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="stat-card success">
-                            <div class="stat-number">{{ stats.total_bots if stats else '0' }}</div>
-                            <div class="stat-label">Total Bots</div>
-                            <small class="text-muted">
-                                <i class="bi bi-robot"></i> Active bots
-                            </small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card warning">
-                            <div class="stat-number">{{ stats.webhook_deliveries if stats else '0' }}</div>
-                            <div class="stat-label">Webhook Deliveries</div>
-                            <small class="text-muted">
-                                <i class="bi bi-send"></i> Last 24h
-                            </small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card danger">
-                            <div class="stat-number">{{ stats.transcriptions if stats else '0' }}</div>
-                            <div class="stat-label">Transcriptions</div>
-                            <small class="text-muted">
-                                <i class="bi bi-file-text"></i> Processed
-                            </small>
-                        </div>
+                    <div class="col-auto">
+                        <i class="bi bi-folder fa-2x text-gray-300"></i>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <!-- Recent Activity -->
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="admin-card p-4">
-                            <h5 class="card-title">
-                                <i class="bi bi-activity"></i> Recent Activity
-                            </h5>
-                            <div class="table-responsive">
-                                <table class="table admin-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Time</th>
-                                            <th>Event</th>
-                                            <th>User</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% if recent_activities %}
-                                        {% for activity in recent_activities %}
-                                        <tr>
-                                            <td>{{ activity.created_at.strftime('%H:%M:%S') }}</td>
-                                            <td>{{ activity.event_type }}</td>
-                                            <td>{{ activity.user.username if activity.user else 'System' }}</td>
-                                            <td>
-                                                <span class="badge bg-{{ 'success' if activity.status == 'completed' else 'warning' }}">
-                                                    {{ activity.status }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                        {% else %}
-                                        <tr>
-                                            <td colspan="4" class="text-center text-muted">
-                                                <i class="bi bi-inbox"></i> No recent activity
-                                            </td>
-                                        </tr>
-                                        {% endif %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stat h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Total Bots</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_bots }}</div>
                     </div>
-
-                    <!-- Quick Actions -->
-                    <div class="col-md-4">
-                        <div class="admin-card p-4">
-                            <h5 class="card-title">
-                                <i class="bi bi-lightning"></i> Quick Actions
-                            </h5>
-                            <div class="d-grid gap-2">
-                                <a href="/admin/bots/create" class="btn btn-admin">
-                                    <i class="bi bi-plus-circle"></i> Create Bot
-                                </a>
-                                <a href="/admin/projects/create" class="btn btn-outline-primary">
-                                    <i class="bi bi-folder-plus"></i> New Project
-                                </a>
-                                <a href="/admin/users/invite" class="btn btn-outline-secondary">
-                                    <i class="bi bi-person-plus"></i> Invite User
-                                </a>
-                                <a href="/admin/webhooks/test" class="btn btn-outline-warning">
-                                    <i class="bi bi-send-check"></i> Test Webhooks
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- System Status -->
-                        <div class="admin-card p-4 mt-3">
-                            <h5 class="card-title">
-                                <i class="bi bi-shield-check"></i> System Status
-                            </h5>
-                            <div class="list-group list-group-flush">
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    Database
-                                    <span class="badge bg-success rounded-pill">Online</span>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    Redis
-                                    <span class="badge bg-success rounded-pill">Online</span>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    Celery Workers
-                                    <span class="badge bg-{{ 'success' if stats.celery_workers > 0 else 'danger' }} rounded-pill">
-                                        {{ stats.celery_workers if stats else 0 }} Workers
-                                    </span>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    Bot Pods
-                                    <span class="badge bg-info rounded-pill">{{ stats.active_pods if stats else 0 }} Running</span>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="col-auto">
+                        <i class="bi bi-robot fa-2x text-gray-300"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} 
+
+<div class="row">
+    <!-- System Status -->
+    <div class="col-xl-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">System Status</h6>
+                <i class="bi bi-activity"></i>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-6">
+                        <strong>Webhook Deliveries:</strong>
+                    </div>
+                    <div class="col-sm-6 text-end">
+                        <span class="badge bg-success">{{ stats.webhook_deliveries }} active</span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-6">
+                        <strong>Transcriptions:</strong>
+                    </div>
+                    <div class="col-sm-6 text-end">
+                        <span class="badge bg-info">{{ stats.transcriptions }} processing</span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-6">
+                        <strong>Celery Workers:</strong>
+                    </div>
+                    <div class="col-sm-6 text-end">
+                        <span class="badge bg-primary">{{ stats.celery_workers }} online</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <strong>Active Pods:</strong>
+                    </div>
+                    <div class="col-sm-6 text-end">
+                        <span class="badge bg-warning">{{ stats.active_pods }} running</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="col-xl-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="card-body">
+                {% if recent_activities %}
+                    {% for activity in recent_activities %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <div class="bg-primary rounded-circle p-2">
+                                <i class="bi bi-{{ activity.icon }} text-white"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="small">{{ activity.description }}</div>
+                            <div class="text-muted small">{{ activity.timestamp }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-inbox display-6"></i>
+                    <p class="mt-2">No recent activity</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/users" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-people"></i> Manage Users
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/bots" class="btn btn-outline-success w-100">
+                            <i class="bi bi-robot"></i> View Bots
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/webhooks" class="btn btn-outline-info w-100">
+                            <i class="bi bi-link-45deg"></i> Webhook Logs
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/settings" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-gear"></i> System Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

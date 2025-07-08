@@ -1,0 +1,307 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Transcriptions Management{% endblock %}
+{% block page_title %}Transcriptions Management{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-mic"></i> Transcription Overview
+                </h6>
+                <div>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="refreshTranscriptions()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h4>{{ transcription_stats.total_transcriptions }}</h4>
+                                <p class="mb-0">Total Transcriptions</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body text-center">
+                                <h4>{{ transcription_stats.processing }}</h4>
+                                <p class="mb-0">Processing</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h4>{{ transcription_stats.completed }}</h4>
+                                <p class="mb-0">Completed</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body text-center">
+                                <h4>{{ transcription_stats.failed }}</h4>
+                                <p class="mb-0">Failed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transcription Jobs -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-file-text"></i> Recent Transcription Jobs
+                </h6>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-outline-secondary" onclick="filterTranscriptions('all')">All</button>
+                    <button class="btn btn-outline-warning" onclick="filterTranscriptions('processing')">Processing</button>
+                    <button class="btn btn-outline-success" onclick="filterTranscriptions('completed')">Completed</button>
+                    <button class="btn btn-outline-danger" onclick="filterTranscriptions('failed')">Failed</button>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if transcriptions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Bot</th>
+                                <th>Provider</th>
+                                <th>Status</th>
+                                <th>Duration</th>
+                                <th>Words</th>
+                                <th>Language</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transcription in transcriptions %}
+                            <tr>
+                                <td>
+                                    <code>{{ transcription.id }}</code>
+                                </td>
+                                <td>
+                                    {% if transcription.bot %}
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-robot me-2"></i>
+                                            <div>
+                                                <div class="fw-bold">{{ transcription.bot.name or 'Unnamed Bot' }}</div>
+                                                <small class="text-muted">{{ transcription.bot.project.name if transcription.bot.project else 'No Project' }}</small>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">No bot</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if transcription.provider %}
+                                        {% if transcription.provider == 'deepgram' %}
+                                            <span class="badge bg-primary">Deepgram</span>
+                                        {% elif transcription.provider == 'google' %}
+                                            <span class="badge bg-success">Google</span>
+                                        {% elif transcription.provider == 'aws' %}
+                                            <span class="badge bg-warning">AWS</span>
+                                        {% elif transcription.provider == 'azure' %}
+                                            <span class="badge bg-info">Azure</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ transcription.provider.title() }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Unknown</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if transcription.status %}
+                                        {% if transcription.status == 'processing' %}
+                                            <span class="badge bg-warning badge-status">
+                                                <i class="bi bi-hourglass-split"></i> Processing
+                                            </span>
+                                        {% elif transcription.status == 'completed' %}
+                                            <span class="badge bg-success badge-status">
+                                                <i class="bi bi-check-circle"></i> Completed
+                                            </span>
+                                        {% elif transcription.status == 'failed' %}
+                                            <span class="badge bg-danger badge-status">
+                                                <i class="bi bi-x-circle"></i> Failed
+                                            </span>
+                                        {% elif transcription.status == 'queued' %}
+                                            <span class="badge bg-info badge-status">
+                                                <i class="bi bi-clock"></i> Queued
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark badge-status">{{ transcription.status.title() }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-light text-dark badge-status">Unknown</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if transcription.duration_seconds %}
+                                        {% set minutes = (transcription.duration_seconds // 60)|int %}
+                                        {% set seconds = (transcription.duration_seconds % 60)|int %}
+                                        <span class="text-muted">{{ minutes }}:{{ "%02d"|format(seconds) }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if transcription.word_count %}
+                                        <span class="badge bg-info">{{ transcription.word_count }} words</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if transcription.language %}
+                                        <span class="badge bg-secondary">{{ transcription.language.upper() }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Auto</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ transcription.created_at.strftime('%Y-%m-%d %H:%M') if transcription.created_at else 'N/A' }}</small>
+                                </td>
+                                <td class="table-actions">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-primary" title="View Transcript">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        {% if transcription.status == 'completed' %}
+                                        <button type="button" class="btn btn-outline-success" title="Download">
+                                            <i class="bi bi-download"></i>
+                                        </button>
+                                        {% endif %}
+                                        {% if transcription.status == 'failed' %}
+                                        <button type="button" class="btn btn-outline-warning" title="Retry">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-outline-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-mic display-1 text-muted"></i>
+                    <h5 class="mt-3 text-muted">No transcriptions found</h5>
+                    <p class="text-muted">No transcription jobs have been created yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Provider Statistics -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Provider Statistics</h6>
+            </div>
+            <div class="card-body">
+                {% if provider_stats %}
+                    {% for provider, count in provider_stats.items() %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            {% if provider == 'deepgram' %}
+                                <i class="bi bi-mic text-primary"></i> Deepgram
+                            {% elif provider == 'google' %}
+                                <i class="bi bi-google text-success"></i> Google
+                            {% elif provider == 'aws' %}
+                                <i class="bi bi-cloud text-warning"></i> AWS
+                            {% elif provider == 'azure' %}
+                                <i class="bi bi-microsoft text-info"></i> Azure
+                            {% else %}
+                                <i class="bi bi-gear"></i> {{ provider.title() }}
+                            {% endif %}
+                        </div>
+                        <span class="badge bg-primary">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="text-center text-muted">
+                    <p>No provider data available</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Processing Performance</h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-8">Average Processing Time:</div>
+                    <div class="col-sm-4 text-end">
+                        <strong>{{ avg_processing_time if avg_processing_time else '-' }}</strong>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-8">Success Rate:</div>
+                    <div class="col-sm-4 text-end">
+                        {% if success_rate %}
+                            <strong class="text-success">{{ "%.1f"|format(success_rate) }}%</strong>
+                        {% else %}
+                            <strong>-</strong>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-8">Total Words Processed:</div>
+                    <div class="col-sm-4 text-end">
+                        <strong>{{ total_words if total_words else '0' }}</strong>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-8">Total Hours Transcribed:</div>
+                    <div class="col-sm-4 text-end">
+                        <strong>{{ "%.1f"|format(total_hours) if total_hours else '0.0' }}h</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function refreshTranscriptions() {
+    location.reload();
+}
+
+function filterTranscriptions(type) {
+    console.log('Filter transcriptions by:', type);
+    // This would be implemented with HTMX or JavaScript filtering
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+}
+</script>
+{% endblock %}

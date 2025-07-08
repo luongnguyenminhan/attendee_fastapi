@@ -1,4 +1,4 @@
-from typing import Optional, List, Any, Dict
+from typing import Optional, List, Any, Dict, TYPE_CHECKING
 from sqlmodel import Field, Relationship
 from sqlalchemy.dialects.postgresql import JSONB
 import random
@@ -9,6 +9,14 @@ import math
 
 from app.core.base_model import BaseEntity
 from app.core.base_enums import BaseEnum, BotStates, RecordingTypes, MeetingTypes
+
+if TYPE_CHECKING:
+    from .webhook_model import WebhookSubscription, WebhookDeliveryAttempt
+    from .chat_message_model import BotChatMessageRequest, ChatMessage
+    from .participant_model import Participant
+    from .recording_model import Recording
+    from .credit_transaction_model import CreditTransaction
+    from ...projects.models.project_model import Project
 
 
 class MeetingType(BaseEnum):
@@ -63,6 +71,70 @@ class BotEventSubType(BaseEnum):
     FATAL_ERROR_OUT_OF_CREDITS = "fatal_error_out_of_credits"
 
 
+class BotEvent(BaseEntity, table=True):
+    __tablename__ = "botevent"
+
+    # State transition
+    old_state: BotState = Field(index=True)
+    new_state: BotState = Field(index=True)
+
+    # Event details
+    event_type: BotEventType = Field(index=True)
+    event_sub_type: Optional[BotEventSubType] = Field(default=None)
+    metadata_: Dict[str, Any] = Field(default_factory=dict, sa_type=JSONB)
+
+    # Timing
+    requested_bot_action_taken_at: Optional[str] = Field(default=None)
+
+    # Foreign key
+    bot_id: UUID = Field(foreign_key="bots.id", index=True)
+
+    # Auto-generated object_id
+    object_id: str = Field(
+        default_factory=lambda: "bevt_"
+        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        unique=True,
+        max_length=32,
+        index=True,
+    )
+
+    # Relationships
+    bot: "Bot" = Relationship(back_populates="bot_events")
+    screenshots: list["BotDebugScreenshot"] = Relationship(back_populates="bot_event")
+
+    # Domain/business logic methods
+    def is_error_event(self) -> bool:
+        """Check if this is an error event"""
+        error_types = [BotEventType.FATAL_ERROR, BotEventType.COULD_NOT_JOIN]
+        return self.event_type in error_types
+
+    def is_state_change(self) -> bool:
+        """Check if this event represents a state change"""
+        return self.old_state != self.new_state
+
+    def get_event_description(self) -> str:
+        """Get human-readable event description"""
+        base_desc = (
+            f"Bot transitioned from {self.old_state.value} to {self.new_state.value}"
+        )
+        if self.event_sub_type:
+            base_desc += f" ({self.event_sub_type.value})"
+        return base_desc
+
+    def get_duration_since_request(self) -> Optional[int]:
+        """Get duration since bot action was requested (in seconds)"""
+        if not self.requested_bot_action_taken_at:
+            return None
+        try:
+            from datetime import datetime
+
+            requested_time = datetime.fromisoformat(self.requested_bot_action_taken_at)
+            duration = (self.created_at - requested_time).total_seconds()
+            return int(duration)
+        except:
+            return None
+
+
 class Bot(BaseEntity, table=True):
     __tablename__ = "bots"
 
@@ -90,6 +162,23 @@ class Bot(BaseEntity, table=True):
     first_heartbeat_timestamp: Optional[int] = Field(default=None)
     last_heartbeat_timestamp: Optional[int] = Field(default=None)
     join_at: Optional[str] = Field(default=None)
+
+    # Relationships
+    project: "Project" = Relationship(back_populates="bots")
+    recordings: list["Recording"] = Relationship(back_populates="bot")
+    participants: list["Participant"] = Relationship(back_populates="bot")
+    chat_messages: list["ChatMessage"] = Relationship(back_populates="bot")
+    chat_message_requests: list["BotChatMessageRequest"] = Relationship(
+        back_populates="bot"
+    )
+    bot_events: list["BotEvent"] = Relationship(back_populates="bot")
+    webhook_subscriptions: list["WebhookSubscription"] = Relationship(
+        back_populates="bot"
+    )
+    webhook_delivery_attempts: list["WebhookDeliveryAttempt"] = Relationship(
+        back_populates="bot"
+    )
+    credit_transactions: list["CreditTransaction"] = Relationship(back_populates="bot")
 
     # Domain/business logic methods
     def is_active(self) -> bool:
@@ -283,66 +372,6 @@ class Bot(BaseEntity, table=True):
         return f"<Bot {self.object_id}: {self.name}>"
 
 
-class BotEvent(BaseEntity, table=True):
-    __tablename__ = "botevent"
-
-    # State transition
-    old_state: BotState = Field(index=True)
-    new_state: BotState = Field(index=True)
-
-    # Event details
-    event_type: BotEventType = Field(index=True)
-    event_sub_type: Optional[BotEventSubType] = Field(default=None)
-    metadata_: Dict[str, Any] = Field(default_factory=dict, sa_type=JSONB)
-
-    # Timing
-    requested_bot_action_taken_at: Optional[str] = Field(default=None)
-
-    # Foreign key
-    bot_id: UUID = Field(foreign_key="bots.id", index=True)
-
-    # Auto-generated object_id
-    object_id: str = Field(
-        default_factory=lambda: "bevt_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
-        unique=True,
-        max_length=32,
-        index=True,
-    )
-
-    # Domain/business logic methods
-    def is_error_event(self) -> bool:
-        """Check if this is an error event"""
-        error_types = [BotEventType.FATAL_ERROR, BotEventType.COULD_NOT_JOIN]
-        return self.event_type in error_types
-
-    def is_state_change(self) -> bool:
-        """Check if this event represents a state change"""
-        return self.old_state != self.new_state
-
-    def get_event_description(self) -> str:
-        """Get human-readable event description"""
-        base_desc = (
-            f"Bot transitioned from {self.old_state.value} to {self.new_state.value}"
-        )
-        if self.event_sub_type:
-            base_desc += f" ({self.event_sub_type.value})"
-        return base_desc
-
-    def get_duration_since_request(self) -> Optional[int]:
-        """Get duration since bot action was requested (in seconds)"""
-        if not self.requested_bot_action_taken_at:
-            return None
-        try:
-            from datetime import datetime
-
-            requested_time = datetime.fromisoformat(self.requested_bot_action_taken_at)
-            duration = (self.created_at - requested_time).total_seconds()
-            return int(duration)
-        except:
-            return None
-
-
 class BotDebugScreenshot(BaseEntity, table=True):
     __tablename__ = "botdebugscreenshot"
 
@@ -361,6 +390,9 @@ class BotDebugScreenshot(BaseEntity, table=True):
         max_length=32,
         index=True,
     )
+
+    # Relationships
+    bot_event: "BotEvent" = Relationship(back_populates="screenshots")
 
     # Domain/business logic methods
     def has_file(self) -> bool:

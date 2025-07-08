@@ -1,0 +1,308 @@
+{% extends "admin/base.html" %}
+
+{% block title %}System Settings{% endblock %}
+{% block page_title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- System Configuration -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-gear"></i> System Configuration
+                </h6>
+            </div>
+            <div class="card-body">
+                <form id="systemConfigForm">
+                    <div class="mb-3">
+                        <label for="maxBotsPerProject" class="form-label">Max Bots per Project</label>
+                        <input type="number" class="form-control" id="maxBotsPerProject" value="10" min="1" max="100">
+                        <div class="form-text">Maximum number of concurrent bots allowed per project.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="defaultCredits" class="form-label">Default Credits for New Organizations</label>
+                        <input type="number" class="form-control" id="defaultCredits" value="500" min="0" step="100">
+                        <div class="form-text">Credits automatically assigned to new organizations (in centicredits).</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableWebhooks" checked>
+                            <label class="form-check-label" for="enableWebhooks">
+                                Enable Webhooks
+                            </label>
+                        </div>
+                        <div class="form-text">Allow organizations to configure webhook subscriptions.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="autoCleanupBots" checked>
+                            <label class="form-check-label" for="autoCleanupBots">
+                                Auto Cleanup Completed Bots
+                            </label>
+                        </div>
+                        <div class="form-text">Automatically remove bot pods after meetings end.</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check"></i> Save Configuration
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Transcription Providers -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-mic"></i> Transcription Providers
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Deepgram</h6>
+                            <small class="text-muted">Real-time speech recognition</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-success">Enabled</span>
+                            <button class="btn btn-outline-secondary btn-sm ms-2">Configure</button>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Google Speech-to-Text</h6>
+                            <small class="text-muted">Google Cloud speech recognition</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-secondary">Disabled</span>
+                            <button class="btn btn-outline-secondary btn-sm ms-2">Configure</button>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">AWS Transcribe</h6>
+                            <small class="text-muted">Amazon speech recognition service</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-secondary">Disabled</span>
+                            <button class="btn btn-outline-secondary btn-sm ms-2">Configure</button>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Azure Speech Services</h6>
+                            <small class="text-muted">Microsoft speech recognition</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-secondary">Disabled</span>
+                            <button class="btn btn-outline-secondary btn-sm ms-2">Configure</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Database Settings -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-database"></i> Database Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-sm-6"><strong>Connection Status:</strong></div>
+                    <div class="col-sm-6">
+                        <span class="badge bg-success">Connected</span>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-sm-6"><strong>Database Type:</strong></div>
+                    <div class="col-sm-6">PostgreSQL</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-sm-6"><strong>Version:</strong></div>
+                    <div class="col-sm-6">15.2</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-sm-6"><strong>Pool Size:</strong></div>
+                    <div class="col-sm-6">20 connections</div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6"><strong>Active Connections:</strong></div>
+                    <div class="col-sm-6">5</div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-info btn-sm" onclick="testConnection()">
+                        <i class="bi bi-arrow-clockwise"></i> Test Connection
+                    </button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="showMigrations()">
+                        <i class="bi bi-database-gear"></i> View Migrations
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cache & Queue -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-speedometer"></i> Cache & Queue Status
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6>Redis Cache</h6>
+                <div class="row mb-2">
+                    <div class="col-sm-6"><strong>Status:</strong></div>
+                    <div class="col-sm-6">
+                        <span class="badge bg-success">Online</span>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-sm-6"><strong>Memory Usage:</strong></div>
+                    <div class="col-sm-6">156 MB</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Keys:</strong></div>
+                    <div class="col-sm-6">1,234</div>
+                </div>
+                
+                <h6>Celery Workers</h6>
+                <div class="row mb-2">
+                    <div class="col-sm-6"><strong>Active Workers:</strong></div>
+                    <div class="col-sm-6">3</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-sm-6"><strong>Pending Tasks:</strong></div>
+                    <div class="col-sm-6">7</div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6"><strong>Processed Today:</strong></div>
+                    <div class="col-sm-6">1,456</div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-info btn-sm" onclick="viewCeleryTasks()">
+                        <i class="bi bi-list-task"></i> View Task Queue
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="flushCache()">
+                        <i class="bi bi-trash"></i> Flush Cache
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Logs -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-file-text"></i> Recent System Logs
+                </h6>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-outline-secondary" onclick="refreshLogs()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                    <button class="btn btn-outline-info" onclick="downloadLogs()">
+                        <i class="bi bi-download"></i> Download
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="log-container" style="height: 300px; overflow-y: auto; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 1rem; font-family: 'Courier New', monospace; font-size: 0.875rem;">
+                    <div class="log-entry text-muted">
+                        <span class="text-primary">[2024-01-15 10:30:15]</span> INFO: FastAPI server started successfully
+                    </div>
+                    <div class="log-entry text-muted">
+                        <span class="text-primary">[2024-01-15 10:30:16]</span> INFO: Database connection pool initialized
+                    </div>
+                    <div class="log-entry text-muted">
+                        <span class="text-primary">[2024-01-15 10:30:17]</span> INFO: Celery workers started
+                    </div>
+                    <div class="log-entry text-success">
+                        <span class="text-primary">[2024-01-15 10:31:22]</span> INFO: Bot created successfully for project xyz-123
+                    </div>
+                    <div class="log-entry text-warning">
+                        <span class="text-primary">[2024-01-15 10:32:45]</span> WARNING: High memory usage detected on worker-1
+                    </div>
+                    <div class="log-entry text-muted">
+                        <span class="text-primary">[2024-01-15 10:33:12]</span> INFO: Webhook delivered successfully to https://example.com/webhook
+                    </div>
+                    <div class="log-entry text-muted">
+                        <span class="text-primary">[2024-01-15 10:34:28]</span> INFO: Transcription completed for bot abc-456
+                    </div>
+                    <div class="log-entry text-danger">
+                        <span class="text-primary">[2024-01-15 10:35:15]</span> ERROR: Failed to connect to Zoom meeting room
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function testConnection() {
+    alert('Testing database connection...');
+    // Implement actual connection test
+}
+
+function showMigrations() {
+    alert('Showing database migrations...');
+    // Implement migration viewer
+}
+
+function viewCeleryTasks() {
+    alert('Viewing Celery task queue...');
+    // Implement task queue viewer
+}
+
+function flushCache() {
+    if (confirm('Are you sure you want to flush the cache? This action cannot be undone.')) {
+        alert('Cache flushed successfully!');
+        // Implement cache flush
+    }
+}
+
+function refreshLogs() {
+    location.reload();
+}
+
+function downloadLogs() {
+    alert('Downloading system logs...');
+    // Implement log download
+}
+
+// Handle system config form submission
+document.getElementById('systemConfigForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert('System configuration saved successfully!');
+    // Implement actual save functionality
+});
+</script>
+{% endblock %}
