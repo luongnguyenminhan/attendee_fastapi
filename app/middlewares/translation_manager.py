@@ -1,7 +1,6 @@
 import json
 import os
 from typing import Dict, Optional
-from functools import lru_cache
 
 
 class TranslationManager:

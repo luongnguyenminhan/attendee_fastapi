@@ -1,4 +1,5 @@
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from pydantic import Field, validator
 
 from app.core.base_model import RequestSchema
@@ -8,14 +9,10 @@ from app.modules.organizations.models.organization_model import OrganizationStat
 class CreateOrganizationRequest(RequestSchema):
     """Create organization request schema"""
 
-    name: str = Field(
-        ..., min_length=2, max_length=255, description="Organization name"
-    )
+    name: str = Field(..., min_length=2, max_length=255, description="Organization name")
     initial_credits: int = Field(default=500, ge=0, description="Initial credit amount")
     enable_webhooks: bool = Field(default=True, description="Enable webhooks")
-    settings: Optional[Dict[str, Any]] = Field(
-        default_factory=dict, description="Organization settings"
-    )
+    settings: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Organization settings")
 
     @validator("name")
     def validate_name(cls, v):
@@ -27,15 +24,9 @@ class CreateOrganizationRequest(RequestSchema):
 class UpdateOrganizationRequest(RequestSchema):
     """Update organization request schema"""
 
-    name: Optional[str] = Field(
-        None, min_length=2, max_length=255, description="Organization name"
-    )
-    is_webhooks_enabled: Optional[bool] = Field(
-        None, description="Enable/disable webhooks"
-    )
-    settings: Optional[Dict[str, Any]] = Field(
-        None, description="Organization settings"
-    )
+    name: Optional[str] = Field(None, min_length=2, max_length=255, description="Organization name")
+    is_webhooks_enabled: Optional[bool] = Field(None, description="Enable/disable webhooks")
+    settings: Optional[Dict[str, Any]] = Field(None, description="Organization settings")
 
     @validator("name")
     def validate_name(cls, v):
@@ -48,17 +39,13 @@ class ManageCreditsRequest(RequestSchema):
     """Manage credits request schema"""
 
     amount: int = Field(..., gt=0, description="Credit amount to add or deduct")
-    operation: str = Field(
-        ..., pattern="^(add|deduct)$", description="Operation: add or deduct"
-    )
+    operation: str = Field(..., pattern="^(add|deduct)$", description="Operation: add or deduct")
 
 
 class BulkStatusUpdateRequest(RequestSchema):
     """Bulk status update request schema"""
 
-    organization_ids: list[str] = Field(
-        ..., min_items=1, description="List of organization IDs"
-    )
+    organization_ids: list[str] = Field(..., min_items=1, description="List of organization IDs")
     status: OrganizationStatus = Field(..., description="New status")
 
 

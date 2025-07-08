@@ -1,6 +1,7 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query
 import json
 import logging
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from .connection_manager import manager
 
@@ -41,20 +42,14 @@ async def websocket_admin(websocket: WebSocket):
 
                 elif message.get("type") == "get_stats":
                     stats = manager.get_connection_stats()
-                    await manager.send_personal_json(
-                        {"type": "stats", "data": stats}, websocket
-                    )
+                    await manager.send_personal_json({"type": "stats", "data": stats}, websocket)
 
                 else:
                     # Echo unknown messages for debugging
-                    await manager.send_personal_json(
-                        {"type": "echo", "original_message": message}, websocket
-                    )
+                    await manager.send_personal_json({"type": "echo", "original_message": message}, websocket)
 
             except json.JSONDecodeError:
-                await manager.send_personal_json(
-                    {"type": "error", "message": "Invalid JSON format"}, websocket
-                )
+                await manager.send_personal_json({"type": "error", "message": "Invalid JSON format"}, websocket)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
@@ -108,9 +103,7 @@ async def websocket_bot_monitor(websocket: WebSocket, bot_id: str):
                     )
 
             except json.JSONDecodeError:
-                await manager.send_personal_json(
-                    {"type": "error", "message": "Invalid JSON format"}, websocket
-                )
+                await manager.send_personal_json({"type": "error", "message": "Invalid JSON format"}, websocket)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
@@ -156,9 +149,7 @@ async def websocket_transcription(websocket: WebSocket):
                     )
 
             except json.JSONDecodeError:
-                await manager.send_personal_json(
-                    {"type": "error", "message": "Invalid JSON format"}, websocket
-                )
+                await manager.send_personal_json({"type": "error", "message": "Invalid JSON format"}, websocket)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
@@ -208,9 +199,7 @@ async def websocket_webhooks(websocket: WebSocket):
                     )
 
             except json.JSONDecodeError:
-                await manager.send_personal_json(
-                    {"type": "error", "message": "Invalid JSON format"}, websocket
-                )
+                await manager.send_personal_json({"type": "error", "message": "Invalid JSON format"}, websocket)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
@@ -222,14 +211,10 @@ async def websocket_webhooks(websocket: WebSocket):
 
 async def broadcast_bot_status_change(bot_id: str, old_status: str, new_status: str):
     """Broadcast bot status change to all connected clients"""
-    await manager.broadcast_bot_event(
-        bot_id, "status_change", {"old_status": old_status, "new_status": new_status}
-    )
+    await manager.broadcast_bot_event(bot_id, "status_change", {"old_status": old_status, "new_status": new_status})
 
 
-async def broadcast_new_transcription(
-    bot_id: str, transcription_text: str, speaker: str = None
-):
+async def broadcast_new_transcription(bot_id: str, transcription_text: str, speaker: str = None):
     """Broadcast new transcription to connected clients"""
     await manager.broadcast_transcription_update(
         bot_id,
@@ -237,9 +222,7 @@ async def broadcast_new_transcription(
     )
 
 
-async def broadcast_webhook_delivery(
-    webhook_id: str, status: str, response_code: int = None
-):
+async def broadcast_webhook_delivery(webhook_id: str, status: str, response_code: int = None):
     """Broadcast webhook delivery result"""
     await manager.broadcast_webhook_status(
         webhook_id,

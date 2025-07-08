@@ -10,8 +10,30 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">
                     <i class="bi bi-folder"></i> All Projects
+                    {% if project_stats %}
+                        <span class="badge bg-info ms-2">{{ project_stats.total_count }}</span>
+                    {% endif %}
                 </h6>
-                <div>
+                <div class="d-flex gap-2">
+                    <!-- Search and Filter Form -->
+                    <form method="GET" class="d-flex">
+                        <input type="text" name="search" class="form-control form-control-sm" 
+                               placeholder="Search projects..." value="{{ search }}" 
+                               style="width: 200px;">
+                        <select name="status" class="form-select form-select-sm ms-1" style="width: 120px;">
+                            <option value="all" {% if status == 'all' %}selected{% endif %}>All Status</option>
+                            <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
+                            <option value="archived" {% if status == 'archived' %}selected{% endif %}>Archived</option>
+                        </select>
+                        <button type="submit" class="btn btn-outline-primary btn-sm ms-1">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        {% if search or status != 'all' %}
+                        <a href="/admin/projects" class="btn btn-outline-secondary btn-sm ms-1" title="Clear">
+                            <i class="bi bi-x"></i>
+                        </a>
+                        {% endif %}
+                    </form>
                     <button class="btn btn-primary btn-sm">
                         <i class="bi bi-plus"></i> Add Project
                     </button>
@@ -23,12 +45,11 @@
                     <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
-                                <th>ID</th>
+                                <th>#</th>
                                 <th>Name</th>
                                 <th>Organization</th>
-                                <th>Bots</th>
-                                <th>API Keys</th>
                                 <th>Status</th>
+                                <th>API Keys</th>
                                 <th>Created</th>
                                 <th>Actions</th>
                             </tr>
@@ -37,7 +58,7 @@
                             {% for project in projects %}
                             <tr>
                                 <td>
-                                    <code>{{ project.id }}</code>
+                                    <small class="text-muted">#{{ loop.index + ((pagination.page - 1) * pagination.page_size) if pagination else loop.index }}</small>
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
@@ -46,8 +67,9 @@
                                         </div>
                                         <div>
                                             <div class="fw-bold">{{ project.name }}</div>
+                                            <small class="text-muted">{{ project.id[:8] }}...</small>
                                             {% if project.description %}
-                                                <small class="text-muted">{{ project.description[:50] }}...</small>
+                                                <div><small class="text-muted">{{ project.description[:40] }}...</small></div>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -60,17 +82,20 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <span class="badge bg-primary">{{ project.bots|length if project.bots else 0 }} bots</span>
+                                    {% if project.status %}
+                                        {% if project.status.value == 'active' %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif project.status.value == 'archived' %}
+                                            <span class="badge bg-secondary">Archived</span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark">{{ project.status.value.title() }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-secondary">Unknown</span>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     <span class="badge bg-warning">{{ project.api_keys|length if project.api_keys else 0 }} keys</span>
-                                </td>
-                                <td>
-                                    {% if project.is_active %}
-                                        <span class="badge bg-success badge-status">Active</span>
-                                    {% else %}
-                                        <span class="badge bg-danger badge-status">Inactive</span>
-                                    {% endif %}
                                 </td>
                                 <td>
                                     <small class="text-muted">{{ project.created_at.strftime('%Y-%m-%d %H:%M') if project.created_at else 'N/A' }}</small>
@@ -99,11 +124,80 @@
                 {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-folder display-1 text-muted"></i>
-                    <h5 class="mt-3 text-muted">No projects found</h5>
-                    <p class="text-muted">There are no projects in the system yet.</p>
-                    <button class="btn btn-primary">
-                        <i class="bi bi-plus"></i> Create First Project
-                    </button>
+                    {% if search %}
+                        <h5 class="mt-3 text-muted">No projects found</h5>
+                        <p class="text-muted">No projects match your search "{{ search }}"</p>
+                        <a href="/admin/projects" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left"></i> Back to All Projects
+                        </a>
+                    {% else %}
+                        <h5 class="mt-3 text-muted">No projects found</h5>
+                        <p class="text-muted">There are no projects in the system yet.</p>
+                        <button class="btn btn-primary">
+                            <i class="bi bi-plus"></i> Create First Project
+                        </button>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Pagination -->
+                {% if pagination and pagination.total > pagination.page_size %}
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <div class="text-muted">
+                        Showing {{ ((pagination.page - 1) * pagination.page_size) + 1 }} to 
+                        {{ min(pagination.page * pagination.page_size, pagination.total) }} of 
+                        {{ pagination.total }} results
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if pagination.page > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ pagination.page - 1 }}{% if search %}&search={{ search }}{% endif %}{% if status and status != 'all' %}&status={{ status }}{% endif %}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% set start_page = max(1, pagination.page - 2) %}
+                            {% set end_page = min(pagination.pages, pagination.page + 2) %}
+
+                            {% if start_page > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status and status != 'all' %}&status={{ status }}{% endif %}">1</a>
+                            </li>
+                            {% if start_page > 2 %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                            {% endif %}
+
+                            {% for page_num in range(start_page, end_page + 1) %}
+                            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="?page={{ page_num }}{% if search %}&search={{ search }}{% endif %}{% if status and status != 'all' %}&status={{ status }}{% endif %}">{{ page_num }}</a>
+                            </li>
+                            {% endfor %}
+
+                            {% if end_page < pagination.pages %}
+                            {% if end_page < pagination.pages - 1 %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ pagination.pages }}{% if search %}&search={{ search }}{% endif %}{% if status and status != 'all' %}&status={{ status }}{% endif %}">{{ pagination.pages }}</a>
+                            </li>
+                            {% endif %}
+
+                            {% if pagination.page < pagination.pages %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ pagination.page + 1 }}{% if search %}&search={{ search }}{% endif %}{% if status and status != 'all' %}&status={{ status }}{% endif %}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
                 </div>
                 {% endif %}
             </div>
@@ -119,30 +213,26 @@
                 <h6 class="m-0 font-weight-bold text-primary">Project Statistics</h6>
             </div>
             <div class="card-body">
+                {% if project_stats %}
                 <div class="row mb-2">
                     <div class="col-sm-8">Total Projects:</div>
-                    <div class="col-sm-4 text-end"><strong>{{ projects|length }}</strong></div>
+                    <div class="col-sm-4 text-end"><strong>{{ project_stats.total_count }}</strong></div>
                 </div>
                 <div class="row mb-2">
                     <div class="col-sm-8">Active Projects:</div>
                     <div class="col-sm-4 text-end">
-                        <strong>{{ projects|selectattr("is_active")|list|length }}</strong>
-                    </div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-sm-8">With Bots:</div>
-                    <div class="col-sm-4 text-end">
-                        {% set projects_with_bots = projects|selectattr("bots")|list|length %}
-                        <strong>{{ projects_with_bots }}</strong>
+                        <strong>{{ project_stats.active_count }}</strong>
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-sm-8">With API Keys:</div>
+                    <div class="col-sm-8">Archived Projects:</div>
                     <div class="col-sm-4 text-end">
-                        {% set projects_with_keys = projects|selectattr("api_keys")|list|length %}
-                        <strong>{{ projects_with_keys }}</strong>
+                        <strong>{{ project_stats.archived_count }}</strong>
                     </div>
                 </div>
+                {% else %}
+                <div class="text-muted">Statistics not available</div>
+                {% endif %}
             </div>
         </div>
     </div>

@@ -1,33 +1,33 @@
 from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlmodel import Session
 
 from app.core.database import get_session
-from app.core.base_model import PagingInfo
 from app.exceptions.handlers import handle_exceptions
-from app.modules.users.models.user_model import User
 from app.modules.projects.repository.project_repo import ProjectRepo
 from app.modules.projects.schemas.project_request import (
+    CreateApiKeyRequest,
     CreateProjectRequest,
     UpdateProjectRequest,
-    CreateApiKeyRequest,
     ValidateApiKeyRequest,
 )
 from app.modules.projects.schemas.project_response import (
-    ProjectAPIResponse,
-    ProjectResponse,
-    ProjectListResponse,
-    ProjectPaginatedAPIResponse,
-    ProjectStatsAPIResponse,
-    ProjectStatsResponse,
     ApiKeyAPIResponse,
-    ApiKeyResponse,
     ApiKeyCreateAPIResponse,
     ApiKeyCreateResponse,
     ApiKeyListAPIResponse,
+    ApiKeyResponse,
     ApiKeyValidationAPIResponse,
     ApiKeyValidationResponse,
+    ProjectAPIResponse,
+    ProjectListResponse,
+    ProjectPaginatedAPIResponse,
+    ProjectResponse,
+    ProjectStatsAPIResponse,
+    ProjectStatsResponse,
 )
+from app.modules.users.models.user_model import User
 from app.utils.security import get_current_user
 
 router = APIRouter(tags=["Projects"])
@@ -56,9 +56,7 @@ async def create_project(
     )
 
     response_data = ProjectResponse.from_entity(project)
-    return ProjectAPIResponse.success(
-        data=response_data, message="projects.messages.created_successfully"
-    )
+    return ProjectAPIResponse.success(data=response_data, message="projects.messages.created_successfully")
 
 
 @router.get(
@@ -90,20 +88,14 @@ async def get_projects_by_organization(
     )
 
     # Convert entities to response schemas
-    response_items = [
-        ProjectListResponse.from_entity(proj) for proj in projects_page.items
-    ]
+    response_items = [ProjectListResponse.from_entity(proj) for proj in projects_page.items]
 
     projects_page.items = response_items
 
-    return ProjectPaginatedAPIResponse.success(
-        data=projects_page, message="projects.messages.retrieved_successfully"
-    )
+    return ProjectPaginatedAPIResponse.success(data=projects_page, message="projects.messages.retrieved_successfully")
 
 
-@router.get(
-    "/{project_id}", response_model=ProjectAPIResponse, summary="Get project by ID"
-)
+@router.get("/{project_id}", response_model=ProjectAPIResponse, summary="Get project by ID")
 @handle_exceptions
 async def get_project(
     project_id: str,
@@ -116,9 +108,7 @@ async def get_project(
     project = await repo.get_project_by_id(project_id)
     response_data = ProjectResponse.from_entity(project)
 
-    return ProjectAPIResponse.success(
-        data=response_data, message="projects.messages.retrieved_successfully"
-    )
+    return ProjectAPIResponse.success(data=response_data, message="projects.messages.retrieved_successfully")
 
 
 @router.get(
@@ -138,14 +128,10 @@ async def get_project_by_object_id(
     project = await repo.get_project_by_object_id(object_id)
     response_data = ProjectResponse.from_entity(project)
 
-    return ProjectAPIResponse.success(
-        data=response_data, message="projects.messages.retrieved_successfully"
-    )
+    return ProjectAPIResponse.success(data=response_data, message="projects.messages.retrieved_successfully")
 
 
-@router.patch(
-    "/{project_id}", response_model=ProjectAPIResponse, summary="Update project"
-)
+@router.patch("/{project_id}", response_model=ProjectAPIResponse, summary="Update project")
 @handle_exceptions
 async def update_project(
     project_id: str,
@@ -164,14 +150,10 @@ async def update_project(
     )
 
     response_data = ProjectResponse.from_entity(project)
-    return ProjectAPIResponse.success(
-        data=response_data, message="projects.messages.updated_successfully"
-    )
+    return ProjectAPIResponse.success(data=response_data, message="projects.messages.updated_successfully")
 
 
-@router.delete(
-    "/{project_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete project"
-)
+@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete project")
 @handle_exceptions
 async def delete_project(
     project_id: str,
@@ -200,9 +182,7 @@ async def archive_project(
     project = await repo.archive_project(project_id)
     response_data = ProjectResponse.from_entity(project)
 
-    return ProjectAPIResponse.success(
-        data=response_data, message="projects.messages.archived_successfully"
-    )
+    return ProjectAPIResponse.success(data=response_data, message="projects.messages.archived_successfully")
 
 
 @router.post(
@@ -222,9 +202,7 @@ async def activate_project(
     project = await repo.activate_project(project_id)
     response_data = ProjectResponse.from_entity(project)
 
-    return ProjectAPIResponse.success(
-        data=response_data, message="projects.messages.activated_successfully"
-    )
+    return ProjectAPIResponse.success(data=response_data, message="projects.messages.activated_successfully")
 
 
 @router.get(
@@ -244,9 +222,7 @@ async def get_project_stats(
     stats = await repo.get_project_stats(project_id)
     response_data = ProjectStatsResponse(**stats)
 
-    return ProjectStatsAPIResponse.success(
-        data=response_data, message="projects.messages.stats_retrieved_successfully"
-    )
+    return ProjectStatsAPIResponse.success(data=response_data, message="projects.messages.stats_retrieved_successfully")
 
 
 # API Key Management Endpoints
@@ -268,14 +244,10 @@ async def create_api_key(
     """Create a new API key for project"""
     repo = ProjectRepo(session)
 
-    api_key, plain_key = await repo.create_api_key(
-        project_id=project_id, name=request.name, expires_at=request.expires_at
-    )
+    api_key, plain_key = await repo.create_api_key(project_id=project_id, name=request.name, expires_at=request.expires_at)
 
     response_data = ApiKeyCreateResponse.from_creation(api_key, plain_key)
-    return ApiKeyCreateAPIResponse.success(
-        data=response_data, message="projects.messages.api_key_created_successfully"
-    )
+    return ApiKeyCreateAPIResponse.success(data=response_data, message="projects.messages.api_key_created_successfully")
 
 
 @router.get(
@@ -296,9 +268,7 @@ async def get_project_api_keys(
 
     response_items = [ApiKeyResponse.from_entity(key) for key in api_keys]
 
-    return ApiKeyListAPIResponse.success(
-        data=response_items, message="projects.messages.api_keys_retrieved_successfully"
-    )
+    return ApiKeyListAPIResponse.success(data=response_items, message="projects.messages.api_keys_retrieved_successfully")
 
 
 @router.patch(
@@ -318,9 +288,7 @@ async def disable_api_key(
     api_key = await repo.disable_api_key(api_key_id)
     response_data = ApiKeyResponse.from_entity(api_key)
 
-    return ApiKeyAPIResponse.success(
-        data=response_data, message="projects.messages.api_key_disabled_successfully"
-    )
+    return ApiKeyAPIResponse.success(data=response_data, message="projects.messages.api_key_disabled_successfully")
 
 
 @router.patch(
@@ -340,9 +308,7 @@ async def enable_api_key(
     api_key = await repo.enable_api_key(api_key_id)
     response_data = ApiKeyResponse.from_entity(api_key)
 
-    return ApiKeyAPIResponse.success(
-        data=response_data, message="projects.messages.api_key_enabled_successfully"
-    )
+    return ApiKeyAPIResponse.success(data=response_data, message="projects.messages.api_key_enabled_successfully")
 
 
 @router.post(
@@ -351,9 +317,7 @@ async def enable_api_key(
     summary="Validate API key",
 )
 @handle_exceptions
-async def validate_api_key(
-    request: ValidateApiKeyRequest, session: Annotated[Session, Depends(get_session)]
-) -> ApiKeyValidationAPIResponse:
+async def validate_api_key(request: ValidateApiKeyRequest, session: Annotated[Session, Depends(get_session)]) -> ApiKeyValidationAPIResponse:
     """Validate API key"""
     repo = ProjectRepo(session)
 

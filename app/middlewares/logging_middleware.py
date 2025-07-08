@@ -1,9 +1,10 @@
-import time
 import logging
+import time
+import uuid
 from typing import Callable
+
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
-import uuid
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,10 +21,7 @@ async def logging_middleware(request: Request, call_next: Callable) -> Response:
     start_time = time.time()
 
     # Log request start
-    logger.info(
-        f"Request {request_id} started: {request.method} {request.url.path} "
-        f"from {request.client.host if request.client else 'unknown'}"
-    )
+    logger.info(f"Request {request_id} started: {request.method} {request.url.path} from {request.client.host if request.client else 'unknown'}")
 
     # Add request ID to request state for access in routes
     request.state.request_id = request_id
@@ -40,10 +38,7 @@ async def logging_middleware(request: Request, call_next: Callable) -> Response:
         response.headers["X-Process-Time"] = str(process_time)
 
         # Log successful response
-        logger.info(
-            f"Request {request_id} completed: {response.status_code} "
-            f"in {process_time:.3f}s"
-        )
+        logger.info(f"Request {request_id} completed: {response.status_code} in {process_time:.3f}s")
 
         return response
 

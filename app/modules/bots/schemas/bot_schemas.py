@@ -1,8 +1,9 @@
-from typing import Optional, List, Any, Dict
-from pydantic import BaseModel, Field, HttpUrl
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from app.core.base_enums import BotStates, RecordingTypes, MeetingTypes
+from pydantic import BaseModel, Field, HttpUrl
+
+from app.core.base_enums import BotStates
 
 
 class BotCreateRequest(BaseModel):

@@ -1,9 +1,11 @@
 from typing import Optional
-from sqlmodel import Field, Relationship
 from uuid import UUID
 
-from app.core.base_model import BaseEntity
+from sqlmodel import Field, Relationship
+
 from app.core.base_enums import BaseEnum
+from app.core.base_model import BaseEntity
+
 from ...organizations.models.organization_model import Organization
 
 
@@ -45,9 +47,7 @@ class User(BaseEntity, table=True):
     is_superuser: bool = Field(default=False)
 
     # Organization relationship
-    organization_id: Optional[UUID] = Field(
-        default=None, foreign_key="organizations.id"
-    )
+    organization_id: Optional[UUID] = Field(default=None, foreign_key="organizations.id")
 
     # Relationships
     organization: Optional[Organization] = Relationship(back_populates="users")

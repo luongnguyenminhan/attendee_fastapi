@@ -1,36 +1,27 @@
 import asyncio
-import logging
-from typing import Dict, Any, Optional
-from datetime import datetime
 import json
+import logging
+
 import httpx
 from sqlmodel import select
 
-from app.jobs.celery_app import celery_app
+from app.core.base_enums import (
+    BotStates,
+)
 from app.core.database import get_session_context
+from app.jobs.celery_app import celery_app
 from app.modules.bots.models import (
     Bot,
-    Utterance,
-    Recording,
-    WebhookSubscription,
-    WebhookDeliveryAttempt,
-    CreditTransaction,
     CreditTransactionManager,
-)
-from app.core.base_enums import (
-    WebhookTriggerTypes,
-    WebhookDeliveryAttemptStatus,
-    BotStates,
-    RecordingTranscriptionStates,
+    Utterance,
+    WebhookDeliveryAttempt,
 )
 
 logger = logging.getLogger(__name__)
 
 
 @celery_app.task(bind=True, max_retries=3)
-def process_utterance_task(
-    self, utterance_id: str, transcription_provider: str = "deepgram"
-):
+def process_utterance_task(self, utterance_id: str, transcription_provider: str = "deepgram"):
     """
     Process utterance transcription using specified provider
 
@@ -43,9 +34,7 @@ def process_utterance_task(
         async def _process():
             async with get_session_context() as session:
                 # Get utterance
-                result = await session.exec(
-                    select(Utterance).where(Utterance.id == utterance_id)
-                )
+                result = await session.exec(select(Utterance).where(Utterance.id == utterance_id))
                 utterance = result.first()
 
                 if not utterance:
@@ -69,9 +58,7 @@ def process_utterance_task(
                     project = recording.bot.project
 
                     # Get credentials for provider
-                    credentials = project.get_credentials_by_type(
-                        transcription_provider
-                    )
+                    credentials = project.get_credentials_by_type(transcription_provider)
                     if not credentials:
                         error_msg = f"No {transcription_provider} credentials found for project {project.id}"
                         utterance.mark_transcription_failed(error_msg)
@@ -85,15 +72,11 @@ def process_utterance_task(
                     time.sleep(1)  # Simulate API call
 
                     # Mock transcription result
-                    mock_transcript = (
-                        f"Mock transcription for utterance {utterance.object_id}"
-                    )
+                    mock_transcript = f"Mock transcription for utterance {utterance.object_id}"
                     confidence = 0.85
 
                     # Set transcription
-                    utterance.set_transcription(
-                        transcript=mock_transcript, confidence=confidence
-                    )
+                    utterance.set_transcription(transcript=mock_transcript, confidence=confidence)
 
                     # Clear audio blob to save space
                     utterance.clear_audio_blob()
@@ -135,11 +118,7 @@ def deliver_webhook_task(self, delivery_attempt_id: str):
         async def _deliver():
             async with get_session_context() as session:
                 # Get delivery attempt
-                result = await session.exec(
-                    select(WebhookDeliveryAttempt).where(
-                        WebhookDeliveryAttempt.id == delivery_attempt_id
-                    )
-                )
+                result = await session.exec(select(WebhookDeliveryAttempt).where(WebhookDeliveryAttempt.id == delivery_attempt_id))
                 attempt = result.first()
 
                 if not attempt:
@@ -172,9 +151,7 @@ def deliver_webhook_task(self, delivery_attempt_id: str):
 
                     # Send webhook
                     async with httpx.AsyncClient(timeout=30.0) as client:
-                        response = await client.post(
-                            subscription.url, content=payload_bytes, headers=headers
-                        )
+                        response = await client.post(subscription.url, content=payload_bytes, headers=headers)
 
                     # Check if successful (2xx status codes)
                     if 200 <= response.status_code < 300:
@@ -184,9 +161,7 @@ def deliver_webhook_task(self, delivery_attempt_id: str):
                         )
                         await session.commit()
 
-                        logger.info(
-                            f"Webhook delivered successfully: {delivery_attempt_id}"
-                        )
+                        logger.info(f"Webhook delivered successfully: {delivery_attempt_id}")
                         return {
                             "status": "success",
                             "status_code": response.status_code,
@@ -268,16 +243,12 @@ def launch_scheduled_bot_task(self, bot_id: str):
                     return {"status": "error", "message": "Bot not found"}
 
                 if bot.state != BotStates.SCHEDULED:
-                    logger.warning(
-                        f"Bot {bot_id} is not in scheduled state: {bot.state}"
-                    )
+                    logger.warning(f"Bot {bot_id} is not in scheduled state: {bot.state}")
                     return {"status": "skipped", "message": "Bot not scheduled"}
 
                 # Check organization credits
                 organization = bot.project.organization
-                if not organization.has_sufficient_credits(
-                    1.0
-                ):  # Minimum 1 credit needed
+                if not organization.has_sufficient_credits(1.0):  # Minimum 1 credit needed
                     bot.set_error()
                     await session.commit()
 
@@ -384,7 +355,7 @@ def run_bot_task(self, bot_id: str):
                         "credits_consumed": credits_consumed / 100.0,
                     }
 
-                except Exception as e:
+                except Exception:
                     # Mark bot as error
                     bot.set_error()
                     await session.commit()

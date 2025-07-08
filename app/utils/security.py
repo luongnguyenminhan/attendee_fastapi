@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
-from typing import Optional, Annotated
+from typing import Optional
 
-from passlib.context import CryptContext
-from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlmodel.ext.asyncio.session import AsyncSession
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 from sqlmodel import select
 
 from app.core.config import settings

@@ -1,14 +1,13 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
-from sqlmodel import select, and_, desc, func
-from decimal import Decimal
 
-from app.core.database import get_session, AsyncSession
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from sqlmodel import and_, desc, select
+
+from app.core.database import AsyncSession, get_session
 from app.modules.bots.models import CreditTransaction, CreditTransactionManager
 from app.modules.organizations.models import Organization
-from app.modules.projects.models import Project
-from app.modules.users.models import User
 from app.modules.users.dependencies import get_current_user
+from app.modules.users.models import User
 
 router = APIRouter(prefix="/credits", tags=["credits"])
 
@@ -68,15 +67,11 @@ async def get_credit_balance(
     """Get current credit balance for organization"""
 
     # Get organization
-    result = await session.exec(
-        select(Organization).where(Organization.id == organization_id)
-    )
+    result = await session.exec(select(Organization).where(Organization.id == organization_id))
     organization = result.first()
 
     if not organization:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
 
     # Get usage stats
     stats = organization.get_credit_usage_stats()
@@ -94,12 +89,8 @@ async def get_credit_balance(
 @router.get("/transactions", response_model=List[CreditTransactionResponse])
 async def list_credit_transactions(
     organization_id: str = Query(..., description="Organization ID"),
-    transaction_type: Optional[str] = Query(
-        None, description="Filter by transaction type"
-    ),
-    limit: int = Query(
-        50, ge=1, le=100, description="Number of transactions to return"
-    ),
+    transaction_type: Optional[str] = Query(None, description="Filter by transaction type"),
+    limit: int = Query(50, ge=1, le=100, description="Number of transactions to return"),
     offset: int = Query(0, ge=0, description="Number of transactions to skip"),
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
@@ -107,9 +98,7 @@ async def list_credit_transactions(
     """List credit transactions for organization"""
 
     # Build query
-    query = select(CreditTransaction).where(
-        CreditTransaction.organization_id == organization_id
-    )
+    query = select(CreditTransaction).where(CreditTransaction.organization_id == organization_id)
 
     # Filter by transaction type if specified
     if transaction_type:
@@ -143,15 +132,11 @@ async def add_credits(
     """Add credits to organization (admin only)"""
 
     # Get organization
-    result = await session.exec(
-        select(Organization).where(Organization.id == organization_id)
-    )
+    result = await session.exec(select(Organization).where(Organization.id == organization_id))
     organization = result.first()
 
     if not organization:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
 
     # Create credit transaction
     transaction = CreditTransactionManager.create_transaction(
@@ -182,15 +167,11 @@ async def get_credit_usage_stats(
     """Get detailed credit usage statistics"""
 
     # Get organization
-    result = await session.exec(
-        select(Organization).where(Organization.id == organization_id)
-    )
+    result = await session.exec(select(Organization).where(Organization.id == organization_id))
     organization = result.first()
 
     if not organization:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
 
     # Calculate date range
     from datetime import datetime, timedelta
@@ -209,14 +190,8 @@ async def get_credit_usage_stats(
     transactions = transactions_result.all()
 
     # Analyze transactions
-    total_added = (
-        sum(t.centicredits_delta for t in transactions if t.centicredits_delta > 0)
-        / 100
-    )
-    total_used = (
-        abs(sum(t.centicredits_delta for t in transactions if t.centicredits_delta < 0))
-        / 100
-    )
+    total_added = sum(t.centicredits_delta for t in transactions if t.centicredits_delta > 0) / 100
+    total_used = abs(sum(t.centicredits_delta for t in transactions if t.centicredits_delta < 0)) / 100
 
     # Count by type
     payment_transactions = [t for t in transactions if t.is_stripe_payment()]
@@ -256,15 +231,11 @@ async def get_credit_transaction(
 ):
     """Get specific credit transaction by ID"""
 
-    result = await session.exec(
-        select(CreditTransaction).where(CreditTransaction.id == transaction_id)
-    )
+    result = await session.exec(select(CreditTransaction).where(CreditTransaction.id == transaction_id))
     transaction = result.first()
 
     if not transaction:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Credit transaction not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Credit transaction not found")
 
     return CreditTransactionResponse.from_orm(transaction)
 
@@ -279,15 +250,11 @@ async def get_usage_estimates(
     """Get estimated credit cost for bot usage"""
 
     # Get organization
-    result = await session.exec(
-        select(Organization).where(Organization.id == organization_id)
-    )
+    result = await session.exec(select(Organization).where(Organization.id == organization_id))
     organization = result.first()
 
     if not organization:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
 
     # Calculate estimates (1 credit per hour rate)
     estimated_credits = hours * 1.0  # 1 credit per hour
@@ -298,8 +265,6 @@ async def get_usage_estimates(
         "estimated_credits": estimated_credits,
         "current_balance": organization.credits(),
         "can_afford": can_afford,
-        "remaining_after": (
-            organization.credits() - estimated_credits if can_afford else 0
-        ),
+        "remaining_after": (organization.credits() - estimated_credits if can_afford else 0),
         "credits_needed": max(0, estimated_credits - organization.credits()),
     }

@@ -1,21 +1,21 @@
-from typing import Optional, List, Dict, Any, Tuple
-from sqlmodel import Session
 import hashlib
 import secrets
+from typing import Any, Dict, List, Optional, Tuple
+
+from sqlmodel import Session
 
 from app.core.base_model import PaginatedResponse
 from app.exceptions.exception import (
+    ConflictException,
     NotFoundException,
     ValidationException,
-    ConflictException,
-    UnauthorizedException,
 )
-from app.modules.projects.dal.project_dal import ProjectDAL, ApiKeyDAL
+from app.modules.projects.dal.project_dal import ApiKeyDAL, ProjectDAL
 from app.modules.projects.models.project_model import (
-    Project,
-    ProjectStatus,
     ApiKey,
     ApiKeyStatus,
+    Project,
+    ProjectStatus,
 )
 
 
@@ -45,9 +45,7 @@ class ProjectRepo:
             raise ValidationException("projects.validation.organization_required")
 
         # Check name uniqueness within organization
-        existing = await self.project_dal.get_by_organization_and_name(
-            organization_id, name.strip()
-        )
+        existing = await self.project_dal.get_by_organization_and_name(organization_id, name.strip())
         if existing:
             raise ConflictException("projects.errors.name_already_exists")
 
@@ -93,9 +91,7 @@ class ProjectRepo:
 
             # Check name uniqueness within organization
             if name.strip() != project.name:
-                existing = await self.project_dal.get_by_organization_and_name(
-                    project.organization_id, name.strip()
-                )
+                existing = await self.project_dal.get_by_organization_and_name(project.organization_id, name.strip())
                 if existing:
                     raise ConflictException("projects.errors.name_already_exists")
 
@@ -133,9 +129,7 @@ class ProjectRepo:
             # Complex filtering
             projects = await self.project_dal.get_by_status(status, organization_id)
             if search:
-                projects = [
-                    proj for proj in projects if search.lower() in proj.name.lower()
-                ]
+                projects = [proj for proj in projects if search.lower() in proj.name.lower()]
             total = len(projects)
             start = skip
             end = start + limit
@@ -154,9 +148,7 @@ class ProjectRepo:
             items = items[start:end]
         else:
             # Get all by organization then paginate
-            all_projects = await self.project_dal.get_by_organization_id(
-                organization_id
-            )
+            all_projects = await self.project_dal.get_by_organization_id(organization_id)
             total = len(all_projects)
             start = skip
             end = start + limit
@@ -186,9 +178,7 @@ class ProjectRepo:
         return await self.project_dal.update(project)
 
     # API Key management methods
-    async def create_api_key(
-        self, project_id: str, name: str, expires_at: Optional[str] = None
-    ) -> Tuple[ApiKey, str]:
+    async def create_api_key(self, project_id: str, name: str, expires_at: Optional[str] = None) -> Tuple[ApiKey, str]:
         """Create new API key and return key + plain text"""
         project = await self.get_project_by_id(project_id)
 
@@ -281,4 +271,62 @@ class ProjectRepo:
             "active_api_keys": len(active_keys),
             "created_at": project.created_at,
             "last_updated": project.updated_at,
+        }
+
+    async def get_all_projects(
+        self,
+        skip: int = 0,
+        limit: int = 20,
+        status: Optional[ProjectStatus] = None,
+        search: Optional[str] = None,
+    ) -> PaginatedResponse[Project]:
+        """Get all projects across all organizations with pagination for admin"""
+
+        if status and search:
+            # Complex filtering
+            projects = await self.project_dal.get_by_status(status)
+            if search:
+                projects = [proj for proj in projects if search.lower() in proj.name.lower()]
+            total = len(projects)
+            start = skip
+            end = start + limit
+            items = projects[start:end]
+        elif status:
+            projects = await self.project_dal.get_by_status(status)
+            total = len(projects)
+            start = skip
+            end = start + limit
+            items = projects[start:end]
+        elif search:
+            items = await self.project_dal.search_by_name(search)
+            total = len(items)
+            start = skip
+            end = start + limit
+            items = items[start:end]
+        else:
+            # Get all projects with pagination
+            items = await self.project_dal.get_all_projects(skip, limit)
+            total = await self.project_dal.count_all_projects()
+
+        page = (skip // limit) + 1
+        pages = (total + limit - 1) // limit
+
+        return PaginatedResponse[Project](
+            items=items,
+            total=total,
+            page=page,
+            size=limit,
+            pages=pages,
+        )
+
+    async def get_project_stats_admin(self) -> Dict[str, Any]:
+        """Get project statistics for admin dashboard"""
+        total_count = await self.project_dal.count_all_projects()
+        active_count = await self.project_dal.count_by_status_all(ProjectStatus.ACTIVE)
+        archived_count = await self.project_dal.count_by_status_all(ProjectStatus.ARCHIVED)
+
+        return {
+            "total_count": total_count,
+            "active_count": active_count,
+            "archived_count": archived_count,
         }

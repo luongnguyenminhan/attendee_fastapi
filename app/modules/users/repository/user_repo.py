@@ -1,17 +1,17 @@
-from typing import Optional, List, Dict, Any
-from sqlalchemy.orm import Session
-from uuid import UUID
 import re
+from typing import Any, Dict, List
+from uuid import UUID
 
-from app.modules.users.dal.user_dal import UserDAL
-from app.modules.users.models.user_model import User, UserStatus, UserRole
+from sqlalchemy.orm import Session
+
 from app.exceptions.exception import (
+    ConflictException,
     NotFoundException,
     ValidationException,
-    ConflictException,
-    BadRequestException,
 )
 from app.middlewares.translation_manager import _
+from app.modules.users.dal.user_dal import UserDAL
+from app.modules.users.models.user_model import User, UserRole, UserStatus
 from app.utils.security import get_password_hash, verify_password
 
 
@@ -151,9 +151,7 @@ class UserRepo:
 
         return await self.user_dal.update(user_id, update_data)
 
-    async def change_password(
-        self, user_id: UUID, current_password: str, new_password: str
-    ) -> User:
+    async def change_password(self, user_id: UUID, current_password: str, new_password: str) -> User:
         """Change user password with current password verification"""
         user = await self.get_user_by_id(user_id)
 
@@ -189,9 +187,7 @@ class UserRepo:
         user = await self.get_user_by_id(user_id)
         return await self.user_dal.delete(user_id, soft_delete=True)
 
-    async def get_users_by_organization(
-        self, organization_id: UUID, skip: int = 0, limit: int = 100
-    ) -> List[User]:
+    async def get_users_by_organization(self, organization_id: UUID, skip: int = 0, limit: int = 100) -> List[User]:
         """Get users by organization"""
         return await self.user_dal.get_by_organization_id(organization_id, skip, limit)
 
@@ -199,18 +195,14 @@ class UserRepo:
         """Get active users"""
         return await self.user_dal.get_active_users(skip, limit)
 
-    async def search_users(
-        self, query: str, skip: int = 0, limit: int = 100
-    ) -> List[User]:
+    async def search_users(self, query: str, skip: int = 0, limit: int = 100) -> List[User]:
         """Search users by various fields"""
         if len(query.strip()) < 2:
             raise ValidationException(_("search_query_too_short"))
 
         return await self.user_dal.search_users(query.strip(), skip, limit)
 
-    async def check_user_permissions(
-        self, user_id: UUID, required_role: UserRole = None
-    ) -> bool:
+    async def check_user_permissions(self, user_id: UUID, required_role: UserRole = None) -> bool:
         """Check if user has required permissions"""
         user = await self.get_user_by_id(user_id)
 

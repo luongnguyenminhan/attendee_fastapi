@@ -1,12 +1,13 @@
-from typing import Optional, Any, Dict, List
-from uuid import UUID
-from sqlmodel import Field, Relationship
-from sqlalchemy.dialects.postgresql import JSONB
 import random
 import string
+from typing import Any, Dict, List, Optional
+from uuid import UUID
 
-from app.core.base_model import BaseEntity
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Field, Relationship
+
 from app.core.base_enums import ParticipantEventTypes
+from app.core.base_model import BaseEntity
 
 
 class Participant(BaseEntity, table=True):
@@ -30,8 +31,7 @@ class Participant(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "par_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "par_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
@@ -41,9 +41,7 @@ class Participant(BaseEntity, table=True):
     bot: "Bot" = Relationship(back_populates="participants")
     utterances: List["Utterance"] = Relationship(back_populates="participant")
     chat_messages: List["ChatMessage"] = Relationship(back_populates="participant")
-    participant_events: List["ParticipantEvent"] = Relationship(
-        back_populates="participant"
-    )
+    participant_events: List["ParticipantEvent"] = Relationship(back_populates="participant")
 
     def join_meeting(self) -> None:
         """Mark participant as joined"""
@@ -67,19 +65,11 @@ class Participant(BaseEntity, table=True):
 
     def get_join_events(self) -> List["ParticipantEvent"]:
         """Get all join events for this participant"""
-        return [
-            event
-            for event in self.participant_events
-            if event.event_type == ParticipantEventTypes.JOIN
-        ]
+        return [event for event in self.participant_events if event.event_type == ParticipantEventTypes.JOIN]
 
     def get_leave_events(self) -> List["ParticipantEvent"]:
         """Get all leave events for this participant"""
-        return [
-            event
-            for event in self.participant_events
-            if event.event_type == ParticipantEventTypes.LEAVE
-        ]
+        return [event for event in self.participant_events if event.event_type == ParticipantEventTypes.LEAVE]
 
     def get_latest_join_event(self) -> Optional["ParticipantEvent"]:
         """Get the most recent join event"""
@@ -128,8 +118,7 @@ class ParticipantEvent(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "pev_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "pev_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,

@@ -1,11 +1,9 @@
 import jwt
-from typing import Optional, List
-from fastapi import Request, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Request, status
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBearer
 
 from app.core.base_model import APIResponse
-from app.exceptions.exception import UnauthorizedException
 from app.middlewares.translation_manager import _
 
 
@@ -39,9 +37,7 @@ class AuthMiddleware:
         if not authorization or not authorization.startswith("Bearer "):
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content=APIResponse.error(
-                    error_code=status.HTTP_401_UNAUTHORIZED, message=_("unauthorized")
-                ).dict(),
+                content=APIResponse.error(error_code=status.HTTP_401_UNAUTHORIZED, message=_("unauthorized")).dict(),
             )
 
         try:
@@ -61,23 +57,17 @@ class AuthMiddleware:
         except jwt.ExpiredSignatureError:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content=APIResponse.error(
-                    error_code=status.HTTP_401_UNAUTHORIZED, message=_("token_expired")
-                ).dict(),
+                content=APIResponse.error(error_code=status.HTTP_401_UNAUTHORIZED, message=_("token_expired")).dict(),
             )
         except jwt.InvalidTokenError:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content=APIResponse.error(
-                    error_code=status.HTTP_401_UNAUTHORIZED, message=_("invalid_token")
-                ).dict(),
+                content=APIResponse.error(error_code=status.HTTP_401_UNAUTHORIZED, message=_("invalid_token")).dict(),
             )
-        except Exception as e:
+        except Exception:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content=APIResponse.error(
-                    error_code=status.HTTP_401_UNAUTHORIZED, message=_("unauthorized")
-                ).dict(),
+                content=APIResponse.error(error_code=status.HTTP_401_UNAUTHORIZED, message=_("unauthorized")).dict(),
             )
 
 

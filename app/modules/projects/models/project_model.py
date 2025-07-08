@@ -1,12 +1,13 @@
-from typing import Optional, List, Any, Dict
-from uuid import UUID
-from sqlmodel import Field, Relationship
-from sqlalchemy.dialects.postgresql import JSONB
 import random
 import string
+from typing import Any, Dict, List, Optional
+from uuid import UUID
 
-from app.core.base_model import BaseEntity
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Field, Relationship
+
 from app.core.base_enums import BaseEnum
+from app.core.base_model import BaseEntity
 
 
 class ProjectStatus(BaseEnum):
@@ -25,8 +26,7 @@ class Project(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "proj_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "proj_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
@@ -41,9 +41,7 @@ class Project(BaseEntity, table=True):
     bots: List["Bot"] = Relationship(back_populates="project")
     credentials: List["Credentials"] = Relationship(back_populates="project")
     webhook_secrets: List["WebhookSecret"] = Relationship(back_populates="project")
-    webhook_subscriptions: List["WebhookSubscription"] = Relationship(
-        back_populates="project"
-    )
+    webhook_subscriptions: List["WebhookSubscription"] = Relationship(back_populates="project")
 
     # Domain/business logic methods
     def can_create_bot(self) -> bool:
@@ -177,8 +175,7 @@ class ApiKey(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "key_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "key_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
@@ -195,11 +192,7 @@ class ApiKey(BaseEntity, table=True):
     # Domain/business logic methods
     def is_active(self) -> bool:
         """Check if API key is active"""
-        return (
-            self.status == ApiKeyStatus.ACTIVE
-            and not self.is_deleted
-            and (self.expires_at is None or self.expires_at > self.get_current_time())
-        )
+        return self.status == ApiKeyStatus.ACTIVE and not self.is_deleted and (self.expires_at is None or self.expires_at > self.get_current_time())
 
     def disable(self) -> None:
         """Disable API key"""

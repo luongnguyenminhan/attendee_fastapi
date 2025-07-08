@@ -1,22 +1,23 @@
-from typing import Optional, List, Any, Dict, TYPE_CHECKING
-from sqlmodel import Field, Relationship
-from sqlalchemy.dialects.postgresql import JSONB
+import math
+import os
 import random
 import string
+from typing import TYPE_CHECKING, Any, Dict, Optional
 from uuid import UUID
-import os
-import math
 
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Field, Relationship
+
+from app.core.base_enums import BaseEnum, MeetingTypes, RecordingTypes
 from app.core.base_model import BaseEntity
-from app.core.base_enums import BaseEnum, BotStates, RecordingTypes, MeetingTypes
 
 if TYPE_CHECKING:
-    from .webhook_model import WebhookSubscription, WebhookDeliveryAttempt
+    from ...projects.models.project_model import Project
     from .chat_message_model import BotChatMessageRequest, ChatMessage
+    from .credit_transaction_model import CreditTransaction
     from .participant_model import Participant
     from .recording_model import Recording
-    from .credit_transaction_model import CreditTransaction
-    from ...projects.models.project_model import Project
+    from .webhook_model import WebhookDeliveryAttempt, WebhookSubscription
 
 
 class MeetingType(BaseEnum):
@@ -91,8 +92,7 @@ class BotEvent(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "bevt_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "bevt_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
@@ -114,9 +114,7 @@ class BotEvent(BaseEntity, table=True):
 
     def get_event_description(self) -> str:
         """Get human-readable event description"""
-        base_desc = (
-            f"Bot transitioned from {self.old_state.value} to {self.new_state.value}"
-        )
+        base_desc = f"Bot transitioned from {self.old_state.value} to {self.new_state.value}"
         if self.event_sub_type:
             base_desc += f" ({self.event_sub_type.value})"
         return base_desc
@@ -147,8 +145,7 @@ class Bot(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "bot_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "bot_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
@@ -168,16 +165,10 @@ class Bot(BaseEntity, table=True):
     recordings: list["Recording"] = Relationship(back_populates="bot")
     participants: list["Participant"] = Relationship(back_populates="bot")
     chat_messages: list["ChatMessage"] = Relationship(back_populates="bot")
-    chat_message_requests: list["BotChatMessageRequest"] = Relationship(
-        back_populates="bot"
-    )
+    chat_message_requests: list["BotChatMessageRequest"] = Relationship(back_populates="bot")
     bot_events: list["BotEvent"] = Relationship(back_populates="bot")
-    webhook_subscriptions: list["WebhookSubscription"] = Relationship(
-        back_populates="bot"
-    )
-    webhook_delivery_attempts: list["WebhookDeliveryAttempt"] = Relationship(
-        back_populates="bot"
-    )
+    webhook_subscriptions: list["WebhookSubscription"] = Relationship(back_populates="bot")
+    webhook_delivery_attempts: list["WebhookDeliveryAttempt"] = Relationship(back_populates="bot")
     credit_transactions: list["CreditTransaction"] = Relationship(back_populates="bot")
 
     # Domain/business logic methods
@@ -198,9 +189,7 @@ class Bot(BaseEntity, table=True):
 
     def can_join_meeting(self) -> bool:
         """Check if bot can join a meeting"""
-        return (
-            self.state in [BotState.READY, BotState.SCHEDULED] and not self.is_deleted
-        )
+        return self.state in [BotState.READY, BotState.SCHEDULED] and not self.is_deleted
 
     def can_leave_meeting(self) -> bool:
         """Check if bot can leave a meeting"""
@@ -286,10 +275,7 @@ class Bot(BaseEntity, table=True):
 
     def centicredits_consumed(self) -> int:
         """Calculate credits consumed based on bot runtime"""
-        if (
-            self.first_heartbeat_timestamp is None
-            or self.last_heartbeat_timestamp is None
-        ):
+        if self.first_heartbeat_timestamp is None or self.last_heartbeat_timestamp is None:
             return 0
         if self.last_heartbeat_timestamp < self.first_heartbeat_timestamp:
             return 0
@@ -334,39 +320,19 @@ class Bot(BaseEntity, table=True):
 
     # Transcription settings helper methods
     def deepgram_model(self):
-        return (
-            self.settings.get("transcription_settings", {})
-            .get("deepgram", {})
-            .get("model", "nova-2")
-        )
+        return self.settings.get("transcription_settings", {}).get("deepgram", {}).get("model", "nova-2")
 
     def deepgram_language(self):
-        return (
-            self.settings.get("transcription_settings", {})
-            .get("deepgram", {})
-            .get("language", "multi")
-        )
+        return self.settings.get("transcription_settings", {}).get("deepgram", {}).get("language", "multi")
 
     def deepgram_detect_language(self):
-        return (
-            self.settings.get("transcription_settings", {})
-            .get("deepgram", {})
-            .get("detect_language", False)
-        )
+        return self.settings.get("transcription_settings", {}).get("deepgram", {}).get("detect_language", False)
 
     def openai_transcription_model(self):
-        return (
-            self.settings.get("transcription_settings", {})
-            .get("openai", {})
-            .get("model", "whisper-1")
-        )
+        return self.settings.get("transcription_settings", {}).get("openai", {}).get("model", "whisper-1")
 
     def openai_transcription_prompt(self):
-        return (
-            self.settings.get("transcription_settings", {})
-            .get("openai", {})
-            .get("prompt", None)
-        )
+        return self.settings.get("transcription_settings", {}).get("openai", {}).get("prompt", None)
 
     def __repr__(self):
         return f"<Bot {self.object_id}: {self.name}>"
@@ -384,8 +350,7 @@ class BotDebugScreenshot(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "shot_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "shot_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,

@@ -1,18 +1,19 @@
-from typing import Optional, Any, Dict
-from uuid import UUID
-from sqlmodel import Field, Relationship
-from sqlalchemy.dialects.postgresql import JSONB
 import random
 import string
+from typing import Any, Dict, Optional
+from uuid import UUID
 
-from app.core.base_model import BaseEntity
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Field, Relationship
+
 from app.core.base_enums import (
     RecordingStates,
     RecordingTranscriptionStates,
     RecordingTypes,
-    TranscriptionTypes,
     TranscriptionProviders,
+    TranscriptionTypes,
 )
+from app.core.base_model import BaseEntity
 
 
 class Recording(BaseEntity, table=True):
@@ -21,22 +22,16 @@ class Recording(BaseEntity, table=True):
     # Core fields
     bot_id: UUID = Field(foreign_key="bots.id", index=True)
     recording_type: RecordingTypes = Field(default=RecordingTypes.AUDIO_AND_VIDEO)
-    transcription_type: TranscriptionTypes = Field(
-        default=TranscriptionTypes.NON_REALTIME
-    )
+    transcription_type: TranscriptionTypes = Field(default=TranscriptionTypes.NON_REALTIME)
     is_default_recording: bool = Field(default=False)
 
     # States
     state: RecordingStates = Field(default=RecordingStates.NOT_STARTED, index=True)
-    transcription_state: RecordingTranscriptionStates = Field(
-        default=RecordingTranscriptionStates.NOT_STARTED, index=True
-    )
+    transcription_state: RecordingTranscriptionStates = Field(default=RecordingTranscriptionStates.NOT_STARTED, index=True)
 
     # Transcription provider
     transcription_provider: Optional[TranscriptionProviders] = Field(default=None)
-    transcription_failure_data: Optional[Dict[str, Any]] = Field(
-        default=None, sa_type=JSONB
-    )
+    transcription_failure_data: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSONB)
 
     # Timing
     started_at: Optional[str] = Field(default=None)
@@ -49,8 +44,7 @@ class Recording(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "rec_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "rec_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
@@ -74,10 +68,7 @@ class Recording(BaseEntity, table=True):
 
     def can_start_transcription(self) -> bool:
         """Check if transcription can be started"""
-        return (
-            self.transcription_state == RecordingTranscriptionStates.NOT_STARTED
-            and self.transcription_type != TranscriptionTypes.NO_TRANSCRIPTION
-        )
+        return self.transcription_state == RecordingTranscriptionStates.NOT_STARTED and self.transcription_type != TranscriptionTypes.NO_TRANSCRIPTION
 
     def start_recording(self) -> None:
         """Start the recording"""

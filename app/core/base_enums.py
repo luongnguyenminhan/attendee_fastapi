@@ -1,6 +1,6 @@
+import enum
 from enum import Enum
 from typing import Any
-import enum
 
 
 class BaseEnum(Enum):

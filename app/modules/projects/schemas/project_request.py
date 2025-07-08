@@ -1,4 +1,5 @@
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from pydantic import Field, validator
 
 from app.core.base_model import RequestSchema
@@ -10,12 +11,8 @@ class CreateProjectRequest(RequestSchema):
 
     name: str = Field(..., min_length=2, max_length=255, description="Project name")
     organization_id: str = Field(..., description="Organization ID")
-    description: Optional[str] = Field(
-        None, max_length=1000, description="Project description"
-    )
-    settings: Optional[Dict[str, Any]] = Field(
-        default_factory=dict, description="Project settings"
-    )
+    description: Optional[str] = Field(None, max_length=1000, description="Project description")
+    settings: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Project settings")
 
     @validator("name")
     def validate_name(cls, v):
@@ -27,12 +24,8 @@ class CreateProjectRequest(RequestSchema):
 class UpdateProjectRequest(RequestSchema):
     """Update project request schema"""
 
-    name: Optional[str] = Field(
-        None, min_length=2, max_length=255, description="Project name"
-    )
-    description: Optional[str] = Field(
-        None, max_length=1000, description="Project description"
-    )
+    name: Optional[str] = Field(None, min_length=2, max_length=255, description="Project name")
+    description: Optional[str] = Field(None, max_length=1000, description="Project description")
     settings: Optional[Dict[str, Any]] = Field(None, description="Project settings")
 
     @validator("name")

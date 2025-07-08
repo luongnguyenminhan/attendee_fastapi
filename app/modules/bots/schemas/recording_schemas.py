@@ -1,13 +1,14 @@
-from typing import Optional, List, Any, Dict
-from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel
 
 from app.core.base_enums import (
     RecordingStates,
     RecordingTranscriptionStates,
     RecordingTypes,
-    TranscriptionTypes,
     TranscriptionProviders,
+    TranscriptionTypes,
 )
 
 

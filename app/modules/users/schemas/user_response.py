@@ -1,9 +1,10 @@
-from typing import Optional, List
-from uuid import UUID
 from datetime import datetime
+from typing import Optional
+from uuid import UUID
+
 from pydantic import ConfigDict
 
-from app.core.base_model import ResponseSchema, APIResponse, PaginatedResponse
+from app.core.base_model import APIResponse, PaginatedResponse, ResponseSchema
 from app.modules.users.models.user_model import UserRole, UserStatus
 
 

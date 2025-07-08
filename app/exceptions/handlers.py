@@ -1,23 +1,22 @@
+import logging
 import traceback
 from functools import wraps
-from typing import Callable, Any
-from fastapi import Request, HTTPException, status
+from typing import Callable
+
+from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
-import logging
 
 from app.core.base_model import APIResponse
 from app.exceptions.exception import (
-    CustomHTTPException,
-    NotFoundException,
-    ValidationException,
-    UnauthorizedException,
-    ForbiddenException,
     ConflictException,
-    BadRequestException,
-    InternalServerException,
+    CustomHTTPException,
     DatabaseException,
     ExternalServiceException,
+    ForbiddenException,
+    NotFoundException,
+    UnauthorizedException,
+    ValidationException,
 )
 from app.middlewares.translation_manager import _
 
@@ -41,9 +40,7 @@ def handle_exceptions(func: Callable) -> Callable:
 
         except CustomHTTPException as e:
             logger.warning(f"Custom HTTP exception: {e.message}")
-            return APIResponse.error(
-                error_code=e.status_code, message=e.message, data=e.detail
-            )
+            return APIResponse.error(error_code=e.status_code, message=e.message, data=e.detail)
 
         except HTTPException as e:
             logger.warning(f"HTTP exception: {e.detail}")
@@ -58,9 +55,7 @@ def handle_exceptions(func: Callable) -> Callable:
 
         except ValueError as e:
             logger.warning(f"Value error: {str(e)}")
-            return APIResponse.error(
-                error_code=status.HTTP_422_UNPROCESSABLE_ENTITY, message=str(e)
-            )
+            return APIResponse.error(error_code=status.HTTP_422_UNPROCESSABLE_ENTITY, message=str(e))
 
         except Exception as e:
             logger.error(f"Unexpected error: {str(e)}")
@@ -73,9 +68,7 @@ def handle_exceptions(func: Callable) -> Callable:
     return wrapper
 
 
-async def custom_http_exception_handler(
-    request: Request, exc: CustomHTTPException
-) -> JSONResponse:
+async def custom_http_exception_handler(request: Request, exc: CustomHTTPException) -> JSONResponse:
     """Handle custom HTTP exceptions"""
     logger.warning(f"Custom HTTP exception: {exc.message}")
     return JSONResponse(
@@ -88,74 +81,52 @@ async def custom_http_exception_handler(
     )
 
 
-async def not_found_exception_handler(
-    request: Request, exc: NotFoundException
-) -> JSONResponse:
+async def not_found_exception_handler(request: Request, exc: NotFoundException) -> JSONResponse:
     """Handle not found exceptions"""
     logger.warning(f"Not found: {exc.message}")
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
-        content=APIResponse.error(
-            error_code=status.HTTP_404_NOT_FOUND, message=exc.message
-        ).dict(),
+        content=APIResponse.error(error_code=status.HTTP_404_NOT_FOUND, message=exc.message).dict(),
     )
 
 
-async def validation_exception_handler(
-    request: Request, exc: ValidationException
-) -> JSONResponse:
+async def validation_exception_handler(request: Request, exc: ValidationException) -> JSONResponse:
     """Handle validation exceptions"""
     logger.warning(f"Validation error: {exc.message}")
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=APIResponse.error(
-            error_code=status.HTTP_422_UNPROCESSABLE_ENTITY, message=exc.message
-        ).dict(),
+        content=APIResponse.error(error_code=status.HTTP_422_UNPROCESSABLE_ENTITY, message=exc.message).dict(),
     )
 
 
-async def unauthorized_exception_handler(
-    request: Request, exc: UnauthorizedException
-) -> JSONResponse:
+async def unauthorized_exception_handler(request: Request, exc: UnauthorizedException) -> JSONResponse:
     """Handle unauthorized exceptions"""
     logger.warning(f"Unauthorized: {exc.message}")
     return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        content=APIResponse.error(
-            error_code=status.HTTP_401_UNAUTHORIZED, message=exc.message
-        ).dict(),
+        content=APIResponse.error(error_code=status.HTTP_401_UNAUTHORIZED, message=exc.message).dict(),
     )
 
 
-async def forbidden_exception_handler(
-    request: Request, exc: ForbiddenException
-) -> JSONResponse:
+async def forbidden_exception_handler(request: Request, exc: ForbiddenException) -> JSONResponse:
     """Handle forbidden exceptions"""
     logger.warning(f"Forbidden: {exc.message}")
     return JSONResponse(
         status_code=status.HTTP_403_FORBIDDEN,
-        content=APIResponse.error(
-            error_code=status.HTTP_403_FORBIDDEN, message=exc.message
-        ).dict(),
+        content=APIResponse.error(error_code=status.HTTP_403_FORBIDDEN, message=exc.message).dict(),
     )
 
 
-async def conflict_exception_handler(
-    request: Request, exc: ConflictException
-) -> JSONResponse:
+async def conflict_exception_handler(request: Request, exc: ConflictException) -> JSONResponse:
     """Handle conflict exceptions"""
     logger.warning(f"Conflict: {exc.message}")
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
-        content=APIResponse.error(
-            error_code=status.HTTP_409_CONFLICT, message=exc.message
-        ).dict(),
+        content=APIResponse.error(error_code=status.HTTP_409_CONFLICT, message=exc.message).dict(),
     )
 
 
-async def database_exception_handler(
-    request: Request, exc: DatabaseException
-) -> JSONResponse:
+async def database_exception_handler(request: Request, exc: DatabaseException) -> JSONResponse:
     """Handle database exceptions"""
     logger.error(f"Database error: {exc.message}")
     return JSONResponse(
@@ -167,9 +138,7 @@ async def database_exception_handler(
     )
 
 
-async def sqlalchemy_exception_handler(
-    request: Request, exc: SQLAlchemyError
-) -> JSONResponse:
+async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
     """Handle SQLAlchemy exceptions"""
     logger.error(f"SQLAlchemy error: {str(exc)}")
     return JSONResponse(

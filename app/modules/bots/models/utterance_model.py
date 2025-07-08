@@ -1,10 +1,11 @@
-from typing import Optional, Any, Dict
-from uuid import UUID
-from sqlmodel import Field, Relationship
-from sqlalchemy.dialects.postgresql import JSONB
+import enum
 import random
 import string
-import enum
+from typing import Any, Dict, Optional
+from uuid import UUID
+
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Field, Relationship
 
 from app.core.base_model import BaseEntity
 
@@ -19,9 +20,7 @@ class Utterance(BaseEntity, table=True):
 
     # Core fields
     recording_id: UUID = Field(foreign_key="recordings.id", index=True)
-    participant_id: Optional[UUID] = Field(
-        foreign_key="participants.id", index=True, default=None
-    )
+    participant_id: Optional[UUID] = Field(foreign_key="participants.id", index=True, default=None)
 
     # Audio data
     audio_blob: Optional[bytes] = Field(default=None)
@@ -42,8 +41,7 @@ class Utterance(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "utt_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "utt_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
@@ -55,9 +53,7 @@ class Utterance(BaseEntity, table=True):
 
     def has_transcription(self) -> bool:
         """Check if utterance has transcription data"""
-        return self.transcription is not None and bool(
-            self.transcription.get("transcript")
-        )
+        return self.transcription is not None and bool(self.transcription.get("transcript"))
 
     def has_audio(self) -> bool:
         """Check if utterance has audio data"""
@@ -97,9 +93,7 @@ class Utterance(BaseEntity, table=True):
             return []
         return self.transcription.get("words", [])
 
-    def set_transcription(
-        self, transcript: str, confidence: float = None, words: list = None
-    ) -> None:
+    def set_transcription(self, transcript: str, confidence: float = None, words: list = None) -> None:
         """Set transcription data"""
         self.transcription = {
             "transcript": transcript,
@@ -113,9 +107,7 @@ class Utterance(BaseEntity, table=True):
         """Clear audio blob to save space after transcription"""
         self.audio_blob = None
 
-    def mark_transcription_failed(
-        self, failure_reason: str, error_details: Dict[str, Any] = None
-    ) -> None:
+    def mark_transcription_failed(self, failure_reason: str, error_details: Dict[str, Any] = None) -> None:
         """Mark transcription as failed"""
         self.failure_data = {
             "reason": failure_reason,
@@ -126,11 +118,7 @@ class Utterance(BaseEntity, table=True):
 
     def can_retry_transcription(self) -> bool:
         """Check if transcription can be retried"""
-        return (
-            not self.has_transcription()
-            and self.transcription_attempt_count < 5
-            and self.has_audio()
-        )
+        return not self.has_transcription() and self.transcription_attempt_count < 5 and self.has_audio()
 
     def increment_attempt_count(self) -> None:
         """Increment transcription attempt count"""

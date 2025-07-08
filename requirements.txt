@@ -9,6 +9,7 @@ sqlmodel==0.0.14
 asyncpg==0.29.0
 psycopg2-binary==2.9.7
 alembic==1.12.1
+greenlet==3.0.1
 
 # Security và Authentication
 cryptography==42.0.8
@@ -43,5 +44,8 @@ mypy==1.7.1
 
 # Production
 gunicorn==21.2.0
+
+# Added from the code block
+bcrypt==4.1.2
 
 

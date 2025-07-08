@@ -1,11 +1,12 @@
-from typing import Optional, List, Any, Dict
-from sqlmodel import Field, Relationship
-from sqlalchemy.dialects.postgresql import JSONB
 import random
 import string
+from typing import Any, Dict, List, Optional
 
-from app.core.base_model import BaseEntity
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Field, Relationship
+
 from app.core.base_enums import BaseEnum
+from app.core.base_model import BaseEntity
 
 
 class OrganizationStatus(BaseEnum):
@@ -21,9 +22,7 @@ class Organization(BaseEntity, table=True):
     name: str = Field(max_length=255)
 
     # Credit system
-    centicredits: int = Field(
-        default=0
-    )  # Credits in centicredits (1/100th of a credit)
+    centicredits: int = Field(default=0)  # Credits in centicredits (1/100th of a credit)
     version: int = Field(default=1)  # For optimistic locking
 
     # Webhook configuration
@@ -31,8 +30,7 @@ class Organization(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "org_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "org_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
@@ -41,9 +39,7 @@ class Organization(BaseEntity, table=True):
     # Relationships
     users: List["User"] = Relationship(back_populates="organization")
     projects: List["Project"] = Relationship(back_populates="organization")
-    credit_transactions: List["CreditTransaction"] = Relationship(
-        back_populates="organization"
-    )
+    credit_transactions: List["CreditTransaction"] = Relationship(back_populates="organization")
 
     # Additional metadata
     settings: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_type=JSONB)
@@ -115,6 +111,4 @@ class Organization(BaseEntity, table=True):
 
     def __repr__(self):
         credit_balance = self.format_credit_balance()
-        return (
-            f"<Organization {self.object_id}: {self.name} ({credit_balance} credits)>"
-        )
+        return f"<Organization {self.object_id}: {self.name} ({credit_balance} credits)>"

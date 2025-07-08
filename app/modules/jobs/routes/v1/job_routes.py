@@ -1,11 +1,12 @@
-from typing import Annotated, List
-from fastapi import APIRouter, Depends, Query, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
+from app.core.base_model import APIResponse
 from app.core.database import get_session
 from app.exceptions.handlers import handle_exceptions
 from app.modules.users.models.user_model import User
-from app.core.base_model import APIResponse
 from app.utils.security import get_current_user
 
 router = APIRouter(tags=["Jobs"])

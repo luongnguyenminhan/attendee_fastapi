@@ -1,8 +1,9 @@
-from typing import Optional, List, Dict, Any, Type, TypeVar, Generic
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 from contextlib import contextmanager
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
+
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from app.core.base_model import BaseEntity
 
@@ -20,18 +21,12 @@ class BaseDAL(Generic[T]):
     async def get_by_id(self, id: UUID) -> Optional[T]:
         """Get entity by ID"""
         try:
-            return (
-                self.db.query(self.model)
-                .filter(self.model.id == id, self.model.is_deleted == False)
-                .first()
-            )
+            return self.db.query(self.model).filter(self.model.id == id, self.model.is_deleted == False).first()
         except SQLAlchemyError as e:
             self.db.rollback()
             raise e
 
-    async def get_all(
-        self, skip: int = 0, limit: int = 100, filters: Optional[Dict[str, Any]] = None
-    ) -> List[T]:
+    async def get_all(self, skip: int = 0, limit: int = 100, filters: Optional[Dict[str, Any]] = None) -> List[T]:
         """Get all entities with optional filters"""
         try:
             query = self.db.query(self.model).filter(self.model.is_deleted == False)

@@ -1,30 +1,27 @@
 from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlmodel import Session
 
 from app.core.database import get_session
-from app.core.base_model import PagingInfo
 from app.exceptions.handlers import handle_exceptions
-from app.modules.users.models.user_model import User
-from app.modules.users.repository.user_repo import UserRepo
 from app.modules.organizations.repository.organization_repo import OrganizationRepo
 from app.modules.organizations.schemas.organization_request import (
     CreateOrganizationRequest,
-    UpdateOrganizationRequest,
     ManageCreditsRequest,
-    GetOrganizationsRequest,
-    GetLowCreditOrganizationsRequest,
+    UpdateOrganizationRequest,
 )
 from app.modules.organizations.schemas.organization_response import (
-    OrganizationAPIResponse,
-    OrganizationResponse,
-    OrganizationListResponse,
-    OrganizationPaginatedAPIResponse,
-    OrganizationStatsAPIResponse,
-    OrganizationStatsResponse,
     CreditTransactionAPIResponse,
     CreditTransactionResponse,
+    OrganizationAPIResponse,
+    OrganizationListResponse,
+    OrganizationPaginatedAPIResponse,
+    OrganizationResponse,
+    OrganizationStatsAPIResponse,
+    OrganizationStatsResponse,
 )
+from app.modules.users.models.user_model import User
 from app.utils.security import get_current_user
 
 router = APIRouter(tags=["Organizations"])
@@ -53,14 +50,10 @@ async def create_organization(
     )
 
     response_data = OrganizationResponse.from_entity(organization)
-    return OrganizationAPIResponse.success(
-        data=response_data, message="organizations.messages.created_successfully"
-    )
+    return OrganizationAPIResponse.success(data=response_data, message="organizations.messages.created_successfully")
 
 
-@router.get(
-    "/", response_model=OrganizationPaginatedAPIResponse, summary="Get organizations"
-)
+@router.get("/", response_model=OrganizationPaginatedAPIResponse, summary="Get organizations")
 @handle_exceptions
 async def get_organizations(
     session: Annotated[Session, Depends(get_session)],
@@ -75,20 +68,14 @@ async def get_organizations(
 
     skip = (page - 1) * size
 
-    organizations_page = await repo.get_organizations(
-        skip=skip, limit=size, status=status_filter, search=search
-    )
+    organizations_page = await repo.get_organizations(skip=skip, limit=size, status=status_filter, search=search)
 
     # Convert entities to response schemas
-    response_items = [
-        OrganizationListResponse.from_entity(org) for org in organizations_page.items
-    ]
+    response_items = [OrganizationListResponse.from_entity(org) for org in organizations_page.items]
 
     organizations_page.items = response_items
 
-    return OrganizationPaginatedAPIResponse.success(
-        data=organizations_page, message="organizations.messages.retrieved_successfully"
-    )
+    return OrganizationPaginatedAPIResponse.success(data=organizations_page, message="organizations.messages.retrieved_successfully")
 
 
 @router.get(
@@ -108,9 +95,7 @@ async def get_organization(
     organization = await repo.get_organization_by_id(organization_id)
     response_data = OrganizationResponse.from_entity(organization)
 
-    return OrganizationAPIResponse.success(
-        data=response_data, message="organizations.messages.retrieved_successfully"
-    )
+    return OrganizationAPIResponse.success(data=response_data, message="organizations.messages.retrieved_successfully")
 
 
 @router.patch(
@@ -136,9 +121,7 @@ async def update_organization(
     )
 
     response_data = OrganizationResponse.from_entity(organization)
-    return OrganizationAPIResponse.success(
-        data=response_data, message="organizations.messages.updated_successfully"
-    )
+    return OrganizationAPIResponse.success(data=response_data, message="organizations.messages.updated_successfully")
 
 
 @router.delete(
@@ -214,9 +197,7 @@ async def suspend_organization(
     organization = await repo.suspend_organization(organization_id)
     response_data = OrganizationResponse.from_entity(organization)
 
-    return OrganizationAPIResponse.success(
-        data=response_data, message="organizations.messages.suspended_successfully"
-    )
+    return OrganizationAPIResponse.success(data=response_data, message="organizations.messages.suspended_successfully")
 
 
 @router.post(
@@ -236,9 +217,7 @@ async def activate_organization(
     organization = await repo.activate_organization(organization_id)
     response_data = OrganizationResponse.from_entity(organization)
 
-    return OrganizationAPIResponse.success(
-        data=response_data, message="organizations.messages.activated_successfully"
-    )
+    return OrganizationAPIResponse.success(data=response_data, message="organizations.messages.activated_successfully")
 
 
 @router.get(
@@ -279,9 +258,7 @@ async def get_low_credit_organizations(
 
     organizations = await repo.get_low_credit_organizations(threshold)
 
-    response_items = [
-        OrganizationListResponse.from_entity(org) for org in organizations
-    ]
+    response_items = [OrganizationListResponse.from_entity(org) for org in organizations]
 
     # Create a simple paginated response for this endpoint
     paginated_response = {

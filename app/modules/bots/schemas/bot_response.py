@@ -1,8 +1,8 @@
-from typing import Optional, Dict, Any, List
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from app.core.base_model import ResponseSchema, APIResponse, PaginatedResponse
-from app.modules.bots.models.bot_model import BotState, BotEventType, BotEventSubType
+from app.core.base_model import APIResponse, PaginatedResponse, ResponseSchema
+from app.modules.bots.models.bot_model import BotEventSubType, BotEventType, BotState
 
 
 class BotResponse(ResponseSchema):
@@ -153,9 +153,7 @@ class BotActionResponse(ResponseSchema):
     message: str
 
     @classmethod
-    def success_action(
-        cls, bot, action: str, old_state: Optional[BotState] = None
-    ) -> "BotActionResponse":
+    def success_action(cls, bot, action: str, old_state: Optional[BotState] = None) -> "BotActionResponse":
         """Create successful action response"""
         return cls(
             bot_id=str(bot.id),

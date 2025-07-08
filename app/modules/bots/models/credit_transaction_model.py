@@ -1,8 +1,9 @@
-from typing import Optional
-from uuid import UUID
-from sqlmodel import Field, Relationship
 import random
 import string
+from typing import Optional
+from uuid import UUID
+
+from sqlmodel import Field, Relationship
 
 from app.core.base_model import BaseEntity
 
@@ -17,27 +18,20 @@ class CreditTransaction(BaseEntity, table=True):
     # Credit amounts (in centicredits - 1/100th of a credit)
     centicredits_before: int = Field()
     centicredits_after: int = Field()
-    centicredits_delta: int = Field(
-        index=True
-    )  # Positive = credit added, Negative = credit used
+    centicredits_delta: int = Field(index=True)  # Positive = credit added, Negative = credit used
 
     # Transaction relationships
-    parent_transaction_id: Optional[UUID] = Field(
-        foreign_key="credit_transactions.id", index=True, default=None
-    )
+    parent_transaction_id: Optional[UUID] = Field(foreign_key="credit_transactions.id", index=True, default=None)
 
     # Payment integration
-    stripe_payment_intent_id: Optional[str] = Field(
-        default=None, max_length=255, unique=True
-    )
+    stripe_payment_intent_id: Optional[str] = Field(default=None, max_length=255, unique=True)
 
     # Description and metadata
     description: Optional[str] = Field(default=None, max_length=1000)
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "ctr_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "ctr_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
@@ -176,7 +170,6 @@ class CreditTransactionManager:
     @staticmethod
     def get_total_credits_purchased(organization: "Organization") -> float:
         """Get total credits purchased by organization"""
-        from sqlmodel import select, func
 
         # This would need to be implemented with actual database session
         # For now, return placeholder
@@ -185,15 +178,12 @@ class CreditTransactionManager:
     @staticmethod
     def get_total_credits_used(organization: "Organization") -> float:
         """Get total credits used by organization"""
-        from sqlmodel import select, func
 
         # This would need to be implemented with actual database session
         # For now, return placeholder
         return 0.0
 
     @staticmethod
-    def can_afford_operation(
-        organization: "Organization", cost_centicredits: int
-    ) -> bool:
+    def can_afford_operation(organization: "Organization", cost_centicredits: int) -> bool:
         """Check if organization can afford an operation"""
         return organization.centicredits >= cost_centicredits

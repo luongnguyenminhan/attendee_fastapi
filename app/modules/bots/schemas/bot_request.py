@@ -1,4 +1,5 @@
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from pydantic import Field, validator
 
 from app.core.base_model import RequestSchema
@@ -12,9 +13,7 @@ class CreateBotRequest(RequestSchema):
     meeting_url: str = Field(..., description="Meeting URL")
     project_id: str = Field(..., description="Project ID")
     meeting_uuid: Optional[str] = Field(None, description="Meeting UUID")
-    settings: Optional[Dict[str, Any]] = Field(
-        default_factory=dict, description="Bot settings"
-    )
+    settings: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Bot settings")
     join_at: Optional[str] = Field(None, description="Scheduled join time (ISO format)")
 
     @validator("name")
@@ -33,9 +32,7 @@ class CreateBotRequest(RequestSchema):
 class UpdateBotRequest(RequestSchema):
     """Update bot request schema"""
 
-    name: Optional[str] = Field(
-        None, min_length=2, max_length=255, description="Bot name"
-    )
+    name: Optional[str] = Field(None, min_length=2, max_length=255, description="Bot name")
     meeting_url: Optional[str] = Field(None, description="Meeting URL")
     meeting_uuid: Optional[str] = Field(None, description="Meeting UUID")
     settings: Optional[Dict[str, Any]] = Field(None, description="Bot settings")

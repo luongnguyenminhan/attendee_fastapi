@@ -1,8 +1,9 @@
-from typing import Optional, List, Dict, Any, Generic, TypeVar
-from pydantic import BaseModel, ConfigDict
-from sqlmodel import SQLModel, Field
 from datetime import datetime
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 from uuid import UUID, uuid4
+
+from pydantic import BaseModel, ConfigDict
+from sqlmodel import Field, SQLModel
 
 
 # Base Entity for database models
@@ -94,15 +95,11 @@ class APIResponse(BaseModel, Generic[T]):
     data: Optional[T] = None
 
     @classmethod
-    def success(
-        cls, data: Optional[T] = None, message: str = "success"
-    ) -> "APIResponse[T]":
+    def success(cls, data: Optional[T] = None, message: str = "success") -> "APIResponse[T]":
         """Create success response"""
         return cls(error_code=0, message=message, data=data)
 
     @classmethod
-    def error(
-        cls, error_code: int, message: str, data: Optional[T] = None
-    ) -> "APIResponse[T]":
+    def error(cls, error_code: int, message: str, data: Optional[T] = None) -> "APIResponse[T]":
         """Create error response"""
         return cls(error_code=error_code, message=message, data=data)

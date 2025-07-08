@@ -1,16 +1,18 @@
-from typing import Optional, Any, Dict, TYPE_CHECKING
-from uuid import UUID
-from sqlmodel import Field, Relationship
-from sqlalchemy.dialects.postgresql import JSONB
-import random
-import string
-import hmac
 import hashlib
+import hmac
+import random
 import secrets
+import string
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Any, Dict, Optional
+from uuid import UUID
 
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Field, Relationship
+
+from app.core.base_enums import WebhookDeliveryAttemptStatus, WebhookTriggerTypes
 from app.core.base_model import BaseEntity
-from app.core.base_enums import WebhookTriggerTypes, WebhookDeliveryAttemptStatus
+
 from ...projects.models.project_model import Project
 
 if TYPE_CHECKING:
@@ -27,8 +29,7 @@ class WebhookSecret(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "whs_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "whs_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
@@ -36,9 +37,7 @@ class WebhookSecret(BaseEntity, table=True):
 
     # Relationships - use forward references for models defined later
     project: Project = Relationship(back_populates="webhook_secrets")
-    webhook_subscriptions: list["WebhookSubscription"] = Relationship(
-        back_populates="webhook_secret"
-    )
+    webhook_subscriptions: list["WebhookSubscription"] = Relationship(back_populates="webhook_secret")
 
     def __init__(self, **kwargs):
         if "secret" not in kwargs:
@@ -73,15 +72,12 @@ class WebhookSubscription(BaseEntity, table=True):
 
     # Webhook configuration
     url: str = Field(max_length=2000)
-    trigger_types: list[WebhookTriggerTypes] = Field(
-        default_factory=list, sa_type=JSONB
-    )
+    trigger_types: list[WebhookTriggerTypes] = Field(default_factory=list, sa_type=JSONB)
     is_active: bool = Field(default=True)
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "whs_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "whs_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
@@ -91,9 +87,7 @@ class WebhookSubscription(BaseEntity, table=True):
     project: Project = Relationship(back_populates="webhook_subscriptions")
     bot: Optional["Bot"] = Relationship(back_populates="webhook_subscriptions")
     webhook_secret: WebhookSecret = Relationship(back_populates="webhook_subscriptions")
-    delivery_attempts: list["WebhookDeliveryAttempt"] = Relationship(
-        back_populates="webhook_subscription"
-    )
+    delivery_attempts: list["WebhookDeliveryAttempt"] = Relationship(back_populates="webhook_subscription")
 
     def is_subscribed_to(self, trigger_type: WebhookTriggerTypes) -> bool:
         """Check if subscription is active for trigger type"""
@@ -114,31 +108,19 @@ class WebhookSubscription(BaseEntity, table=True):
         if not self.delivery_attempts:
             return 0.0
 
-        successful = sum(
-            1
-            for attempt in self.delivery_attempts
-            if attempt.status == WebhookDeliveryAttemptStatus.SUCCESS
-        )
+        successful = sum(1 for attempt in self.delivery_attempts if attempt.status == WebhookDeliveryAttemptStatus.SUCCESS)
         return (successful / len(self.delivery_attempts)) * 100
 
     def get_last_successful_delivery(self) -> Optional["WebhookDeliveryAttempt"]:
         """Get most recent successful delivery"""
-        successful_attempts = [
-            attempt
-            for attempt in self.delivery_attempts
-            if attempt.status == WebhookDeliveryAttemptStatus.SUCCESS
-        ]
+        successful_attempts = [attempt for attempt in self.delivery_attempts if attempt.status == WebhookDeliveryAttemptStatus.SUCCESS]
         if not successful_attempts:
             return None
         return max(successful_attempts, key=lambda a: a.created_at)
 
     def get_failed_deliveries_count(self) -> int:
         """Get count of failed deliveries"""
-        return sum(
-            1
-            for attempt in self.delivery_attempts
-            if attempt.status == WebhookDeliveryAttemptStatus.FAILURE
-        )
+        return sum(1 for attempt in self.delivery_attempts if attempt.status == WebhookDeliveryAttemptStatus.FAILURE)
 
     def __repr__(self):
         status = "Active" if self.is_active else "Inactive"
@@ -149,16 +131,12 @@ class WebhookDeliveryAttempt(BaseEntity, table=True):
     __tablename__ = "webhook_delivery_attempts"
 
     # Core fields - Fix: webhook_subscription_id should be UUID, not str
-    webhook_subscription_id: UUID = Field(
-        foreign_key="webhook_subscriptions.id", index=True
-    )
+    webhook_subscription_id: UUID = Field(foreign_key="webhook_subscriptions.id", index=True)
     bot_id: Optional[UUID] = Field(foreign_key="bots.id", index=True, default=None)
 
     # Delivery details
     webhook_trigger_type: WebhookTriggerTypes = Field(index=True)
-    status: WebhookDeliveryAttemptStatus = Field(
-        default=WebhookDeliveryAttemptStatus.PENDING, index=True
-    )
+    status: WebhookDeliveryAttemptStatus = Field(default=WebhookDeliveryAttemptStatus.PENDING, index=True)
 
     # HTTP details
     http_status_code: Optional[int] = Field(default=None)
@@ -176,17 +154,14 @@ class WebhookDeliveryAttempt(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "wda_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "wda_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
     )
 
     # Relationships
-    webhook_subscription: WebhookSubscription = Relationship(
-        back_populates="delivery_attempts"
-    )
+    webhook_subscription: WebhookSubscription = Relationship(back_populates="delivery_attempts")
     bot: Optional["Bot"] = Relationship(back_populates="webhook_delivery_attempts")
 
     def is_pending(self) -> bool:
@@ -203,11 +178,7 @@ class WebhookDeliveryAttempt(BaseEntity, table=True):
 
     def can_retry(self, max_attempts: int = 5) -> bool:
         """Check if delivery can be retried"""
-        return (
-            self.is_failed()
-            and self.attempt_number < max_attempts
-            and self.next_retry_at is not None
-        )
+        return self.is_failed() and self.attempt_number < max_attempts and self.next_retry_at is not None
 
     def should_retry_now(self) -> bool:
         """Check if it's time to retry"""
@@ -230,9 +201,7 @@ class WebhookDeliveryAttempt(BaseEntity, table=True):
         self.completed_at = self.get_current_time().isoformat()
         self.next_retry_at = None
 
-    def mark_failed(
-        self, error_message: str, http_status: int = None, response_body: str = None
-    ) -> None:
+    def mark_failed(self, error_message: str, http_status: int = None, response_body: str = None) -> None:
         """Mark delivery as failed and schedule retry"""
         self.status = WebhookDeliveryAttemptStatus.FAILURE
         self.error_message = error_message

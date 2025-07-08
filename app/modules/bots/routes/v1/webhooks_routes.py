@@ -1,23 +1,22 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
-from sqlmodel import select, and_
 
-from app.core.database import get_session, AsyncSession
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from sqlmodel import and_, select
+
+from app.core.base_enums import WebhookDeliveryAttemptStatus, WebhookTriggerTypes
+from app.core.database import AsyncSession, get_session
 from app.modules.bots.models import (
-    WebhookSubscription,
-    WebhookDeliveryAttempt,
-    WebhookSecret,
-    Bot,
     Project,
+    WebhookDeliveryAttempt,
+    WebhookSubscription,
 )
 from app.modules.bots.schemas import (
-    WebhookSubscriptionResponse,
-    WebhookSubscriptionCreateRequest,
     WebhookDeliveryAttemptResponse,
+    WebhookSubscriptionCreateRequest,
+    WebhookSubscriptionResponse,
 )
-from app.modules.users.models import User
 from app.modules.users.dependencies import get_current_user
-from app.core.base_enums import WebhookTriggerTypes, WebhookDeliveryAttemptStatus
+from app.modules.users.models import User
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
@@ -62,15 +61,11 @@ async def create_webhook_subscription(
     """Create webhook subscription"""
 
     # Verify project exists
-    project_result = await session.exec(
-        select(Project).where(Project.id == subscription_data.project_id)
-    )
+    project_result = await session.exec(select(Project).where(Project.id == subscription_data.project_id))
     project = project_result.first()
 
     if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
     # Get or create webhook secret for project
     webhook_secret = project.get_webhook_secret()
@@ -97,9 +92,7 @@ async def create_webhook_subscription(
     return WebhookSubscriptionResponse.from_orm(subscription)
 
 
-@router.get(
-    "/subscriptions/{subscription_id}", response_model=WebhookSubscriptionResponse
-)
+@router.get("/subscriptions/{subscription_id}", response_model=WebhookSubscriptionResponse)
 async def get_webhook_subscription(
     subscription_id: str,
     session: AsyncSession = Depends(get_session),
@@ -107,9 +100,7 @@ async def get_webhook_subscription(
 ):
     """Get webhook subscription by ID"""
 
-    result = await session.exec(
-        select(WebhookSubscription).where(WebhookSubscription.id == subscription_id)
-    )
+    result = await session.exec(select(WebhookSubscription).where(WebhookSubscription.id == subscription_id))
     subscription = result.first()
 
     if not subscription:
@@ -121,9 +112,7 @@ async def get_webhook_subscription(
     return WebhookSubscriptionResponse.from_orm(subscription)
 
 
-@router.put(
-    "/subscriptions/{subscription_id}", response_model=WebhookSubscriptionResponse
-)
+@router.put("/subscriptions/{subscription_id}", response_model=WebhookSubscriptionResponse)
 async def update_webhook_subscription(
     subscription_id: str,
     update_data: WebhookSubscriptionCreateRequest,
@@ -132,9 +121,7 @@ async def update_webhook_subscription(
 ):
     """Update webhook subscription"""
 
-    result = await session.exec(
-        select(WebhookSubscription).where(WebhookSubscription.id == subscription_id)
-    )
+    result = await session.exec(select(WebhookSubscription).where(WebhookSubscription.id == subscription_id))
     subscription = result.first()
 
     if not subscription:
@@ -163,9 +150,7 @@ async def delete_webhook_subscription(
 ):
     """Delete webhook subscription"""
 
-    result = await session.exec(
-        select(WebhookSubscription).where(WebhookSubscription.id == subscription_id)
-    )
+    result = await session.exec(select(WebhookSubscription).where(WebhookSubscription.id == subscription_id))
     subscription = result.first()
 
     if not subscription:
@@ -189,9 +174,7 @@ async def test_webhook_subscription(
 ):
     """Test webhook subscription by sending a test payload"""
 
-    result = await session.exec(
-        select(WebhookSubscription).where(WebhookSubscription.id == subscription_id)
-    )
+    result = await session.exec(select(WebhookSubscription).where(WebhookSubscription.id == subscription_id))
     subscription = result.first()
 
     if not subscription:
@@ -224,12 +207,8 @@ async def test_webhook_subscription(
 
 @router.get("/delivery-attempts", response_model=List[WebhookDeliveryAttemptResponse])
 async def list_webhook_delivery_attempts(
-    subscription_id: Optional[str] = Query(
-        None, description="Filter by subscription ID"
-    ),
-    status: Optional[WebhookDeliveryAttemptStatus] = Query(
-        None, description="Filter by status"
-    ),
+    subscription_id: Optional[str] = Query(None, description="Filter by subscription ID"),
+    status: Optional[WebhookDeliveryAttemptStatus] = Query(None, description="Filter by status"),
     limit: int = Query(50, ge=1, le=100, description="Number of attempts to return"),
     offset: int = Query(0, ge=0, description="Number of attempts to skip"),
     session: AsyncSession = Depends(get_session),
@@ -241,9 +220,7 @@ async def list_webhook_delivery_attempts(
     conditions = []
 
     if subscription_id:
-        conditions.append(
-            WebhookDeliveryAttempt.webhook_subscription_id == subscription_id
-        )
+        conditions.append(WebhookDeliveryAttempt.webhook_subscription_id == subscription_id)
 
     if status:
         conditions.append(WebhookDeliveryAttempt.status == status)
@@ -261,9 +238,7 @@ async def list_webhook_delivery_attempts(
     return [WebhookDeliveryAttemptResponse.from_orm(attempt) for attempt in attempts]
 
 
-@router.get(
-    "/delivery-attempts/{attempt_id}", response_model=WebhookDeliveryAttemptResponse
-)
+@router.get("/delivery-attempts/{attempt_id}", response_model=WebhookDeliveryAttemptResponse)
 async def get_webhook_delivery_attempt(
     attempt_id: str,
     session: AsyncSession = Depends(get_session),
@@ -271,9 +246,7 @@ async def get_webhook_delivery_attempt(
 ):
     """Get webhook delivery attempt by ID"""
 
-    result = await session.exec(
-        select(WebhookDeliveryAttempt).where(WebhookDeliveryAttempt.id == attempt_id)
-    )
+    result = await session.exec(select(WebhookDeliveryAttempt).where(WebhookDeliveryAttempt.id == attempt_id))
     attempt = result.first()
 
     if not attempt:
@@ -293,9 +266,7 @@ async def retry_webhook_delivery(
 ):
     """Manually retry webhook delivery"""
 
-    result = await session.exec(
-        select(WebhookDeliveryAttempt).where(WebhookDeliveryAttempt.id == attempt_id)
-    )
+    result = await session.exec(select(WebhookDeliveryAttempt).where(WebhookDeliveryAttempt.id == attempt_id))
     attempt = result.first()
 
     if not attempt:
@@ -338,9 +309,7 @@ async def get_webhook_stats(
     # Build base query
     query = select(WebhookDeliveryAttempt)
     if project_id:
-        query = query.join(WebhookSubscription).where(
-            WebhookSubscription.project_id == project_id
-        )
+        query = query.join(WebhookSubscription).where(WebhookSubscription.project_id == project_id)
 
     result = await session.exec(query)
     all_attempts = result.all()

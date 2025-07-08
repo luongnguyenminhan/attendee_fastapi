@@ -1,12 +1,12 @@
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+
 from sqlmodel import Session
 
 from app.core.base_model import PaginatedResponse
 from app.exceptions.exception import (
+    ConflictException,
     NotFoundException,
     ValidationException,
-    ConflictException,
-    UnauthorizedException,
 )
 from app.modules.organizations.dal.organization_dal import OrganizationDAL
 from app.modules.organizations.models.organization_model import (
@@ -117,9 +117,7 @@ class OrganizationRepo:
             # Complex filtering - get by status first then filter by search
             organizations = await self.dal.get_by_status(status)
             if search:
-                organizations = [
-                    org for org in organizations if search.lower() in org.name.lower()
-                ]
+                organizations = [org for org in organizations if search.lower() in org.name.lower()]
             total = len(organizations)
             start = skip
             end = start + limit
@@ -150,27 +148,19 @@ class OrganizationRepo:
             pages=pages,
         )
 
-    async def manage_credits(
-        self, organization_id: str, amount: int, operation: str = "add"
-    ) -> Organization:
+    async def manage_credits(self, organization_id: str, amount: int, operation: str = "add") -> Organization:
         """Add or deduct credits from organization"""
         organization = await self.get_organization_by_id(organization_id)
 
         if operation == "add":
             if amount <= 0:
-                raise ValidationException(
-                    "organizations.validation.invalid_credit_amount"
-                )
+                raise ValidationException("organizations.validation.invalid_credit_amount")
             organization.add_credits(amount)
         elif operation == "deduct":
             if amount <= 0:
-                raise ValidationException(
-                    "organizations.validation.invalid_credit_amount"
-                )
+                raise ValidationException("organizations.validation.invalid_credit_amount")
             if not organization.deduct_credits(amount):
-                raise ValidationException(
-                    "organizations.validation.insufficient_credits"
-                )
+                raise ValidationException("organizations.validation.insufficient_credits")
         else:
             raise ValidationException("organizations.validation.invalid_operation")
 
@@ -188,9 +178,7 @@ class OrganizationRepo:
         organization.activate()
         return await self.dal.update(organization)
 
-    async def get_low_credit_organizations(
-        self, threshold: int = 100
-    ) -> List[Organization]:
+    async def get_low_credit_organizations(self, threshold: int = 100) -> List[Organization]:
         """Get organizations with low credits"""
         return await self.dal.get_with_low_credits(threshold)
 

@@ -1,8 +1,9 @@
-from typing import Optional, List, Any, Dict
-from pydantic import BaseModel, HttpUrl, Field
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from app.core.base_enums import WebhookTriggerTypes, WebhookDeliveryAttemptStatus
+from pydantic import BaseModel, HttpUrl
+
+from app.core.base_enums import WebhookDeliveryAttemptStatus, WebhookTriggerTypes
 
 
 class WebhookSubscriptionCreateRequest(BaseModel):

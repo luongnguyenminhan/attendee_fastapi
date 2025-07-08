@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from app.core.base_model import RequestSchema, FilterableRequestSchema
+from app.core.base_model import FilterableRequestSchema, RequestSchema
 from app.modules.users.models.user_model import UserRole, UserStatus
 
 

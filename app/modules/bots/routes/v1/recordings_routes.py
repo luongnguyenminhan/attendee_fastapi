@@ -1,14 +1,15 @@
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from fastapi.responses import StreamingResponse
-from sqlmodel import select, and_
+from typing import Optional
 
-from app.core.database import get_session, AsyncSession
-from app.modules.bots.models import Recording, Bot
-from app.modules.bots.schemas import RecordingResponse, RecordingListResponse
-from app.modules.users.models import User
-from app.modules.users.dependencies import get_current_user
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
+from sqlmodel import and_, select
+
 from app.core.base_enums import RecordingStates
+from app.core.database import AsyncSession, get_session
+from app.modules.bots.models import Bot, Recording
+from app.modules.bots.schemas import RecordingListResponse, RecordingResponse
+from app.modules.users.dependencies import get_current_user
+from app.modules.users.models import User
 
 router = APIRouter(prefix="/recordings", tags=["recordings"])
 
@@ -17,9 +18,7 @@ router = APIRouter(prefix="/recordings", tags=["recordings"])
 async def list_recordings(
     project_id: Optional[str] = Query(None, description="Filter by project ID"),
     bot_id: Optional[str] = Query(None, description="Filter by bot ID"),
-    state: Optional[RecordingStates] = Query(
-        None, description="Filter by recording state"
-    ),
+    state: Optional[RecordingStates] = Query(None, description="Filter by recording state"),
     limit: int = Query(50, ge=1, le=100, description="Number of recordings to return"),
     offset: int = Query(0, ge=0, description="Number of recordings to skip"),
     session: AsyncSession = Depends(get_session),
@@ -85,9 +84,7 @@ async def get_recording(
     recording = result.first()
 
     if not recording:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Recording not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recording not found")
 
     return RecordingResponse.from_orm(recording)
 
@@ -104,14 +101,10 @@ async def download_recording(
     recording = result.first()
 
     if not recording:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Recording not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recording not found")
 
     if not recording.file_path:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Recording file not available"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recording file not available")
 
     # TODO: Implement actual file streaming from storage (S3, local, etc.)
     # For now, return placeholder
@@ -141,9 +134,7 @@ async def delete_recording(
     recording = result.first()
 
     if not recording:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Recording not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recording not found")
 
     # TODO: Delete actual file from storage
 
@@ -166,9 +157,7 @@ async def get_recording_transcripts(
     recording = result.first()
 
     if not recording:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Recording not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recording not found")
 
     # Get all utterances for this recording
     utterances = recording.utterances
@@ -210,9 +199,7 @@ async def retry_transcription(
     recording = result.first()
 
     if not recording:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Recording not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recording not found")
 
     # Find utterances that can be retried
     retry_count = 0

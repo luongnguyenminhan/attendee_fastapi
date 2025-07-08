@@ -1,20 +1,19 @@
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+
 from sqlmodel import Session
 
-from app.core.base_model import PaginationParams, PaginatedResponse
+from app.core.base_model import PaginatedResponse, PaginationParams
 from app.exceptions.exception import (
     NotFoundException,
     ValidationException,
-    ConflictException,
-    UnauthorizedException,
 )
 from app.modules.bots.dal.bot_dal import BotDAL, BotEventDAL
 from app.modules.bots.models.bot_model import (
     Bot,
-    BotState,
     BotEvent,
-    BotEventType,
     BotEventSubType,
+    BotEventType,
+    BotState,
 )
 
 
@@ -258,9 +257,7 @@ class BotRepo:
         bot.update_heartbeat()
         return await self.bot_dal.update(bot)
 
-    async def set_bot_error(
-        self, bot_id: str, error_details: Optional[Dict[str, Any]] = None
-    ) -> Bot:
+    async def set_bot_error(self, bot_id: str, error_details: Optional[Dict[str, Any]] = None) -> Bot:
         """Set bot to error state"""
         bot = await self.get_bot_by_id(bot_id)
 
@@ -343,3 +340,63 @@ class BotRepo:
         )
 
         return await self.event_dal.create(event)
+
+    async def get_all_bots(
+        self,
+        skip: int = 0,
+        limit: int = 20,
+        state: Optional[BotState] = None,
+        search: Optional[str] = None,
+    ) -> PaginatedResponse[Bot]:
+        """Get all bots across all projects with pagination for admin"""
+
+        if state and search:
+            # Complex filtering
+            bots = await self.bot_dal.get_by_state(state)
+            if search:
+                bots = [bot for bot in bots if search.lower() in bot.name.lower()]
+            total = len(bots)
+            start = skip
+            end = start + limit
+            items = bots[start:end]
+        elif state:
+            bots = await self.bot_dal.get_by_state(state)
+            total = len(bots)
+            start = skip
+            end = start + limit
+            items = bots[start:end]
+        elif search:
+            items = await self.bot_dal.search_by_name(search)
+            total = len(items)
+            start = skip
+            end = start + limit
+            items = items[start:end]
+        else:
+            # Get all bots with pagination
+            items = await self.bot_dal.get_all_bots(skip, limit)
+            total = await self.bot_dal.count_all_bots()
+
+        page = (skip // limit) + 1
+        pages = (total + limit - 1) // limit
+
+        return PaginatedResponse[Bot](
+            items=items,
+            total=total,
+            page=page,
+            size=limit,
+            pages=pages,
+        )
+
+    async def get_bot_stats_admin(self) -> Dict[str, Any]:
+        """Get bot statistics for admin dashboard"""
+        total_count = await self.bot_dal.count_all_bots()
+        ready_count = await self.bot_dal.count_by_state_all(BotState.READY)
+        joined_count = await self.bot_dal.count_by_state_all(BotState.JOINED_NOT_RECORDING) + await self.bot_dal.count_by_state_all(BotState.JOINED_RECORDING)
+        error_count = await self.bot_dal.count_by_state_all(BotState.FATAL_ERROR)
+
+        return {
+            "total_count": total_count,
+            "ready_count": ready_count,
+            "joined_count": joined_count,
+            "error_count": error_count,
+        }

@@ -1,12 +1,13 @@
-from typing import Optional, Any, Dict
-from uuid import UUID
-from sqlmodel import Field, Relationship
-from sqlalchemy.dialects.postgresql import JSONB
 import random
 import string
+from typing import Any, Dict, Optional
+from uuid import UUID
 
-from app.core.base_model import BaseEntity
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Field, Relationship
+
 from app.core.base_enums import ChatMessageToOptions
+from app.core.base_model import BaseEntity
 
 
 class ChatMessage(BaseEntity, table=True):
@@ -14,9 +15,7 @@ class ChatMessage(BaseEntity, table=True):
 
     # Core fields
     bot_id: UUID = Field(foreign_key="bots.id", index=True)
-    participant_id: Optional[UUID] = Field(
-        foreign_key="participants.id", index=True, default=None
-    )
+    participant_id: Optional[UUID] = Field(foreign_key="participants.id", index=True, default=None)
 
     # Message content
     text: str = Field(max_length=10000)
@@ -24,9 +23,7 @@ class ChatMessage(BaseEntity, table=True):
 
     # Timing
     timestamp: int = Field(index=True)  # Unix timestamp
-    timestamp_ms: Optional[int] = Field(
-        default=None, index=True
-    )  # Milliseconds timestamp
+    timestamp_ms: Optional[int] = Field(default=None, index=True)  # Milliseconds timestamp
 
     # Sender information
     sender_name: Optional[str] = Field(default=None, max_length=255)
@@ -38,8 +35,7 @@ class ChatMessage(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "msg_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "msg_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
@@ -51,9 +47,7 @@ class ChatMessage(BaseEntity, table=True):
 
     def is_from_bot(self) -> bool:
         """Check if message is from the bot"""
-        return (
-            self.participant and self.participant.is_the_bot
-        ) or self.sender_name == "Bot"
+        return (self.participant and self.participant.is_the_bot) or self.sender_name == "Bot"
 
     def is_to_bot_only(self) -> bool:
         """Check if message is directed to bot only"""
@@ -129,8 +123,7 @@ class BotChatMessageRequest(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "bcr_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "bcr_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,

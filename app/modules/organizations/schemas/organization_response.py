@@ -1,7 +1,7 @@
-from typing import Optional, Dict, Any, List
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from app.core.base_model import ResponseSchema, APIResponse, PaginatedResponse
+from app.core.base_model import APIResponse, PaginatedResponse, ResponseSchema
 from app.modules.organizations.models.organization_model import OrganizationStatus
 
 
@@ -86,8 +86,6 @@ class CreditTransactionResponse(ResponseSchema):
 # API Response types
 OrganizationAPIResponse = APIResponse[OrganizationResponse]
 OrganizationListAPIResponse = APIResponse[List[OrganizationListResponse]]
-OrganizationPaginatedAPIResponse = APIResponse[
-    PaginatedResponse[OrganizationListResponse]
-]
+OrganizationPaginatedAPIResponse = APIResponse[PaginatedResponse[OrganizationListResponse]]
 OrganizationStatsAPIResponse = APIResponse[OrganizationStatsResponse]
 CreditTransactionAPIResponse = APIResponse[CreditTransactionResponse]

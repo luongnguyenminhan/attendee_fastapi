@@ -1,9 +1,10 @@
-from typing import Optional, Dict, Any
-from sqlmodel import Field
-from sqlalchemy.dialects.postgresql import JSONB
+from typing import Any, Dict, Optional
 
-from app.core.base_model import BaseEntity
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Field
+
 from app.core.base_enums import BaseEnum
+from app.core.base_model import BaseEntity
 
 
 class JobStatus(BaseEnum):

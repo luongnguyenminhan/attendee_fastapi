@@ -1,16 +1,16 @@
-from typing import Optional, Any, Dict
-from uuid import UUID
-from sqlmodel import Field, Relationship
-from sqlalchemy.dialects.postgresql import JSONB
+import base64
+import json
+import os
 import random
 import string
-import json
-import base64
-from cryptography.fernet import Fernet
-import os
+from typing import Any, Dict, Optional
+from uuid import UUID
 
-from app.core.base_model import BaseEntity
+from cryptography.fernet import Fernet
+from sqlmodel import Field, Relationship
+
 from app.core.base_enums import CredentialTypes
+from app.core.base_model import BaseEntity
 
 
 class Credentials(BaseEntity, table=True):
@@ -29,8 +29,7 @@ class Credentials(BaseEntity, table=True):
 
     # Auto-generated object_id
     object_id: str = Field(
-        default_factory=lambda: "cred_"
-        + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        default_factory=lambda: "cred_" + "".join(random.choices(string.ascii_letters + string.digits, k=16)),
         unique=True,
         max_length=32,
         index=True,
@@ -78,9 +77,7 @@ class Credentials(BaseEntity, table=True):
 
         except Exception as e:
             # Log error but don't expose sensitive info
-            print(
-                f"Failed to decrypt credentials for {self.object_id}: {type(e).__name__}"
-            )
+            print(f"Failed to decrypt credentials for {self.object_id}: {type(e).__name__}")
             return None
 
     def has_credentials(self) -> bool:

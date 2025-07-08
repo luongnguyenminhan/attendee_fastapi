@@ -1,3 +1,3 @@
-from .project_model import Project, ApiKey, ProjectStatus, ApiKeyStatus
+from .project_model import ApiKey, ApiKeyStatus, Project, ProjectStatus
 
 __all__ = ["Project", "ApiKey", "ProjectStatus", "ApiKeyStatus"]
