@@ -1,9 +1,8 @@
 from typing import Optional
 
 import aiohttp
-from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
+from fastapi import APIRouter, Depends, Form
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -13,12 +12,9 @@ from app.modules.projects.repository.project_repo import ProjectRepo
 from app.modules.users.repository.user_repo import UserRepo
 
 # Global API configuration
-API_BASE_URL = "http://localhost:8001"
+API_BASE_URL = "http://localhost:8000"
 
 router = APIRouter(tags=["admin"])
-
-# Setup Jinja2 templates
-templates = Jinja2Templates(directory="app/templates")
 
 
 # Dependency to get current user (simplified for now)
@@ -73,35 +69,8 @@ async def admin_debug_users():
     return {"users": mock_users, "total": len(mock_users), "page": 1, "page_size": 50}
 
 
-@router.get("/test-template", response_class=HTMLResponse)
-async def test_template(request: Request):
-    """Test template rendering"""
-    try:
-        return templates.TemplateResponse(
-            "admin/users.html",
-            {
-                "request": request,
-                "user": {"username": "admin", "email": "admin@attendee.dev"},
-                "users": [],
-                "user_stats": {
-                    "total_users": 0,
-                    "active_users": 0,
-                    "inactive_users": 0,
-                },
-                "pagination": {"page": 1, "page_size": 50, "total": 0, "pages": 0},
-                "page": 1,
-                "page_size": 50,
-                "search": "",
-                "messages": [],
-            },
-        )
-    except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=500)
-
-
-@router.get("/dashboard", response_class=HTMLResponse)
+@router.get("/dashboard")
 async def admin_dashboard(
-    request: Request,
     db: AsyncSession = Depends(get_session),
     current_user=Depends(get_current_admin_user),
 ):
@@ -164,21 +133,18 @@ async def admin_dashboard(
     # Mock recent activities for now
     recent_activities = []
 
-    return templates.TemplateResponse(
-        "admin/dashboard.html",
-        {
-            "request": request,
+    return {
+        "success": True,
+        "data": {
             "user": current_user,
             "stats": stats,
             "recent_activities": recent_activities,
-            "messages": [],  # Flash messages
         },
-    )
+    }
 
 
-@router.get("/users", response_class=HTMLResponse)
+@router.get("/users")
 async def admin_users(
-    request: Request,
     page: int = 1,
     page_size: int = 50,
     search: str = None,
@@ -291,11 +257,11 @@ async def admin_users(
             ),
         }
 
-    # Render template with data
-    return templates.TemplateResponse(
-        "admin/users.html",
-        {
-            "request": request,
+    # Return JSON response
+    return {
+        "success": True,
+        "data": {
+            "user": current_user,
             "users": users,
             "pagination": pagination,
             "user_stats": user_stats,
@@ -303,12 +269,11 @@ async def admin_users(
             "page": page,
             "page_size": page_size,
         },
-    )
+    }
 
 
-@router.get("/bots", response_class=HTMLResponse)
+@router.get("/bots")
 async def admin_bots(
-    request: Request,
     page: int = 1,
     page_size: int = 50,
     search: str = None,
@@ -339,10 +304,9 @@ async def admin_bots(
         # Get bot statistics
         bot_stats = await bot_repo.get_bot_stats_admin()
 
-        return templates.TemplateResponse(
-            "admin/bots.html",
-            {
-                "request": request,
+        return {
+            "success": True,
+            "data": {
                 "user": current_user,
                 "bots": paginated_result.items,
                 "bot_stats": bot_stats,
@@ -354,39 +318,39 @@ async def admin_bots(
                 },
                 "search": search or "",
                 "state": state or "all",
-                "messages": [],
             },
-        )
+        }
     except Exception as e:
         print(f"Error in admin_bots: {e}")
-        return templates.TemplateResponse(
-            "admin/bots.html",
-            {
-                "request": request,
-                "user": current_user,
-                "bots": [],
-                "bot_stats": {
-                    "total_count": 0,
-                    "ready_count": 0,
-                    "joined_count": 0,
-                    "error_count": 0,
+        return JSONResponse(
+            content={
+                "success": False,
+                "message": "Lỗi khi tải dữ liệu bots",
+                "data": {
+                    "user": current_user,
+                    "bots": [],
+                    "bot_stats": {
+                        "total_count": 0,
+                        "ready_count": 0,
+                        "joined_count": 0,
+                        "error_count": 0,
+                    },
+                    "pagination": {
+                        "page": page,
+                        "page_size": page_size,
+                        "total": 0,
+                        "pages": 0,
+                    },
+                    "search": search or "",
+                    "state": state or "all",
                 },
-                "pagination": {
-                    "page": page,
-                    "page_size": page_size,
-                    "total": 0,
-                    "pages": 0,
-                },
-                "search": search or "",
-                "state": state or "all",
-                "messages": [{"type": "error", "text": "Lỗi khi tải dữ liệu bots"}],
             },
+            status_code=500,
         )
 
 
-@router.get("/organizations", response_class=HTMLResponse)
+@router.get("/organizations")
 async def admin_organizations(
-    request: Request,
     page: int = 1,
     page_size: int = 50,
     search: str = None,
@@ -419,10 +383,9 @@ async def admin_organizations(
         # Get organization statistics
         org_stats = await org_repo.get_organization_stats()
 
-        return templates.TemplateResponse(
-            "admin/organizations.html",
-            {
-                "request": request,
+        return {
+            "success": True,
+            "data": {
                 "user": current_user,
                 "organizations": paginated_result.items,
                 "org_stats": org_stats,
@@ -434,41 +397,39 @@ async def admin_organizations(
                 },
                 "search": search or "",
                 "status": status or "all",
-                "messages": [],
             },
-        )
+        }
     except Exception as e:
         print(f"Error in admin_organizations: {e}")
-        return templates.TemplateResponse(
-            "admin/organizations.html",
-            {
-                "request": request,
-                "user": current_user,
-                "organizations": [],
-                "org_stats": {
-                    "total_count": 0,
-                    "active_count": 0,
-                    "suspended_count": 0,
-                    "inactive_count": 0,
+        return JSONResponse(
+            content={
+                "success": False,
+                "message": "Lỗi khi tải dữ liệu organizations",
+                "data": {
+                    "user": current_user,
+                    "organizations": [],
+                    "org_stats": {
+                        "total_count": 0,
+                        "active_count": 0,
+                        "suspended_count": 0,
+                        "inactive_count": 0,
+                    },
+                    "pagination": {
+                        "page": page,
+                        "page_size": page_size,
+                        "total": 0,
+                        "pages": 0,
+                    },
+                    "search": search or "",
+                    "status": status or "all",
                 },
-                "pagination": {
-                    "page": page,
-                    "page_size": page_size,
-                    "total": 0,
-                    "pages": 0,
-                },
-                "search": search or "",
-                "status": status or "all",
-                "messages": [
-                    {"type": "error", "text": "Lỗi khi tải dữ liệu organizations"}
-                ],
             },
+            status_code=500,
         )
 
 
-@router.get("/projects", response_class=HTMLResponse)
+@router.get("/projects")
 async def admin_projects(
-    request: Request,
     page: int = 1,
     page_size: int = 50,
     search: str = None,
@@ -499,10 +460,9 @@ async def admin_projects(
         # Get project statistics
         project_stats = await project_repo.get_project_stats_admin()
 
-        return templates.TemplateResponse(
-            "admin/projects.html",
-            {
-                "request": request,
+        return {
+            "success": True,
+            "data": {
                 "user": current_user,
                 "projects": paginated_result.items,
                 "project_stats": project_stats,
@@ -514,39 +474,38 @@ async def admin_projects(
                 },
                 "search": search or "",
                 "status": status or "all",
-                "messages": [],
             },
-        )
+        }
     except Exception as e:
         print(f"Error in admin_projects: {e}")
-        return templates.TemplateResponse(
-            "admin/projects.html",
-            {
-                "request": request,
-                "user": current_user,
-                "projects": [],
-                "project_stats": {
-                    "total_count": 0,
-                    "active_count": 0,
-                    "archived_count": 0,
+        return JSONResponse(
+            content={
+                "success": False,
+                "message": "Lỗi khi tải dữ liệu projects",
+                "data": {
+                    "user": current_user,
+                    "projects": [],
+                    "project_stats": {
+                        "total_count": 0,
+                        "active_count": 0,
+                        "archived_count": 0,
+                    },
+                    "pagination": {
+                        "page": page,
+                        "page_size": page_size,
+                        "total": 0,
+                        "pages": 0,
+                    },
+                    "search": search or "",
+                    "status": status or "all",
                 },
-                "pagination": {
-                    "page": page,
-                    "page_size": page_size,
-                    "total": 0,
-                    "pages": 0,
-                },
-                "search": search or "",
-                "status": status or "all",
-                "messages": [{"type": "error", "text": "Lỗi khi tải dữ liệu projects"}],
             },
+            status_code=500,
         )
 
 
-@router.get("/webhooks", response_class=HTMLResponse)
-async def admin_webhooks(
-    request: Request, current_user=Depends(get_current_admin_user)
-):
+@router.get("/webhooks")
+async def admin_webhooks(current_user=Depends(get_current_admin_user)):
     """Admin webhooks management page"""
 
     # TODO: Implement webhook statistics when webhook models are ready
@@ -557,21 +516,17 @@ async def admin_webhooks(
         "pending_deliveries": 0,
     }
 
-    return templates.TemplateResponse(
-        "admin/webhooks.html",
-        {
-            "request": request,
+    return {
+        "success": True,
+        "data": {
             "user": current_user,
             "webhook_stats": webhook_stats,
-            "messages": [],
         },
-    )
+    }
 
 
-@router.get("/transcriptions", response_class=HTMLResponse)
-async def admin_transcriptions(
-    request: Request, current_user=Depends(get_current_admin_user)
-):
+@router.get("/transcriptions")
+async def admin_transcriptions(current_user=Depends(get_current_admin_user)):
     """Admin transcriptions management page"""
 
     # TODO: Implement transcription statistics when transcription models are ready
@@ -582,32 +537,29 @@ async def admin_transcriptions(
         "failed": 0,
     }
 
-    return templates.TemplateResponse(
-        "admin/transcriptions.html",
-        {
-            "request": request,
+    return {
+        "success": True,
+        "data": {
             "user": current_user,
             "transcription_stats": transcription_stats,
-            "messages": [],
         },
-    )
+    }
 
 
-@router.get("/settings", response_class=HTMLResponse)
-async def admin_settings(
-    request: Request, current_user=Depends(get_current_admin_user)
-):
+@router.get("/settings")
+async def admin_settings(current_user=Depends(get_current_admin_user)):
     """Admin settings page"""
 
-    return templates.TemplateResponse(
-        "admin/settings.html",
-        {"request": request, "user": current_user, "messages": []},
-    )
+    return {
+        "success": True,
+        "data": {
+            "user": current_user,
+        },
+    }
 
 
 @router.post("/users/create")
 async def admin_create_user(
-    request: Request,
     email: str = Form(...),
     username: str = Form(...),
     password: str = Form(...),

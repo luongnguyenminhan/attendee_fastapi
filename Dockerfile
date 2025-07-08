@@ -9,7 +9,7 @@ WORKDIR $cwd
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Install Dependencies for Bot Automation
+# Install Dependencies cho Bot Automation trong một layer
 RUN apt-get update && apt-get install -y \
     build-essential \
     ca-certificates \
@@ -43,10 +43,8 @@ RUN apt-get update && apt-get install -y \
     unzip \
     zip \
     vim \
-    libpq-dev
-
-# Install Chrome dependencies for Google Meet/Zoom automation
-RUN apt-get install -y \
+    libpq-dev \
+    # Chrome dependencies
     xvfb \
     x11-xkb-utils \
     xfonts-100dpi \
@@ -57,28 +55,18 @@ RUN apt-get install -y \
     libvulkan1 \
     fonts-liberation \
     xdg-utils \
-    wget
-
-# Install specific Chrome version for bot automation
-RUN wget -q http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_134.0.6998.88-1_amd64.deb
-RUN apt-get install -y ./google-chrome-stable_134.0.6998.88-1_amd64.deb
-
-# Install ALSA for audio capture
-RUN apt-get update && apt-get install -y \
+    wget \
+    # ALSA for audio
     libasound2 \
     libasound2-plugins \
     alsa \
     alsa-utils \
-    alsa-oss
-
-# Install Pulseaudio and FFmpeg for audio processing
-RUN apt-get install -y \
+    alsa-oss \
+    # Pulseaudio and FFmpeg
     pulseaudio \
     pulseaudio-utils \
-    ffmpeg
-
-# Install GStreamer for media processing
-RUN apt-get install -y \
+    ffmpeg \
+    # GStreamer
     gstreamer1.0-tools \
     gstreamer1.0-plugins-base \
     gstreamer1.0-plugins-good \
@@ -88,29 +76,27 @@ RUN apt-get install -y \
     libgstreamer1.0-dev \
     libgstreamer-plugins-base1.0-dev \
     libgirepository1.0-dev \
-    --fix-missing
-
-# Install additional tools
-RUN apt-get update && apt-get install -y \
+    # Additional tools
     universal-ctags \
-    xterm
-
-# Alias python3 to python
-RUN ln -s /usr/bin/python3 /usr/bin/python
+    xterm \
+    && wget -q http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_134.0.6998.88-1_amd64.deb \
+    && apt-get install -y ./google-chrome-stable_134.0.6998.88-1_amd64.deb \
+    && rm -f google-chrome-stable_134.0.6998.88-1_amd64.deb \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -s /usr/bin/python3 /usr/bin/python
 
 FROM base AS deps
 
-# Install Python dependencies
-RUN pip install --upgrade pip
+# Upgrade pip
+RUN pip install --upgrade pip --no-cache-dir
 
-# Copy requirements first for Docker layer caching
+# Copy requirements first để tận dụng Docker cache
 COPY requirements.txt .
 
-# Install Python packages including FastAPI specific ones
-RUN pip install -r requirements.txt
-
-# Install additional Python packages for bot functionality
-RUN pip install \
+# Install Python packages với --no-cache-dir để giảm kích thước
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir \
     pyjwt \
     cython \
     gdown \
@@ -129,7 +115,7 @@ RUN pip install \
     boto3 \
     django-storages
 
-# Install Tini for proper signal handling
+# Install Tini
 ENV TINI_VERSION=v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini
@@ -145,7 +131,7 @@ COPY . .
 COPY entrypoint.sh /opt/bin/entrypoint.sh
 RUN chmod +x /opt/bin/entrypoint.sh
 
-# Add root to pulse-access group for audio
+# Add root to pulse-access group
 RUN adduser root pulse-access
 
 # Set Python path
@@ -154,7 +140,7 @@ ENV PYTHONPATH=/attendee_fastapi
 # Expose port
 EXPOSE 8000
 
-# Use tini as entrypoint for proper signal handling
+# Use tini as entrypoint
 ENTRYPOINT ["/tini", "--"]
 
 # Default command
