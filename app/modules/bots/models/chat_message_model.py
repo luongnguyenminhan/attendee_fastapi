@@ -3,7 +3,7 @@ import string
 from typing import Any, Dict, Optional
 from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.mysql import JSON
 from sqlmodel import Field, Relationship
 
 from app.core.base_enums import ChatMessageToOptions
@@ -31,7 +31,7 @@ class ChatMessage(BaseEntity, table=True):
     sender_user_uuid: Optional[str] = Field(default=None, max_length=255)
 
     # Additional data
-    additional_data: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSONB)
+    additional_data: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
 
     # Auto-generated object_id
     object_id: str = Field(

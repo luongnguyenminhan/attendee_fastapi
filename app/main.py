@@ -7,13 +7,23 @@ from app.core.database import create_tables
 from app.exceptions.handlers import setup_exception_handlers
 from app.middlewares.cors_middleware import setup_cors_middleware
 from app.middlewares.logging_middleware import setup_logging_middleware
-from app.modules.admin.routes.admin_routes import router as admin_router
+from app.modules.bots.routes.v1.admin_bot_routes import router as admin_bot_router
 from app.modules.bots.routes.v1.bot_routes import router as bot_router
 from app.modules.jobs.routes.v1.job_routes import router as job_router
+from app.modules.organizations.routes.v1.admin_organization_routes import (
+    router as admin_organization_router,
+)
 from app.modules.organizations.routes.v1.organization_routes import (
     router as organization_router,
 )
+from app.modules.projects.routes.v1.admin_project_routes import (
+    router as admin_project_router,
+)
 from app.modules.projects.routes.v1.project_routes import router as project_router
+from app.modules.system.routes.v1.admin_system_routes import (
+    router as admin_system_router,
+)
+from app.modules.users.routes.v1.admin_user_routes import router as admin_user_router
 from app.modules.users.routes.v1.auth_routes import router as auth_router
 from app.modules.users.routes.v1.user_routes import router as user_router
 from app.modules.websocket.websocket_routes import router as websocket_router
@@ -71,8 +81,12 @@ app.include_router(project_router, prefix="/api/v1/projects", tags=["Projects"])
 app.include_router(bot_router, prefix="/api/v1/bots", tags=["Bots"])
 app.include_router(job_router, prefix="/api/v1/jobs", tags=["Jobs"])
 
-# Admin interface (web interface, not API)
-app.include_router(admin_router, prefix="/admin", tags=["Admin Interface"])
+# Admin API endpoints - distributed across modules
+app.include_router(admin_system_router, prefix="/api/v1", tags=["Admin - System"])
+app.include_router(admin_user_router, prefix="/api/v1", tags=["Admin - Users"])
+app.include_router(admin_bot_router, prefix="/api/v1", tags=["Admin - Bots"])
+app.include_router(admin_organization_router, prefix="/api/v1", tags=["Admin - Organizations"])
+app.include_router(admin_project_router, prefix="/api/v1", tags=["Admin - Projects"])
 
 # WebSocket router
 app.include_router(websocket_router, prefix="/api/v1/websocket", tags=["WebSocket"])

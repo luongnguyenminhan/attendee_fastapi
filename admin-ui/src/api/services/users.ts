@@ -10,9 +10,9 @@ import type {
 
 export const usersApi = {
   // Get all users với pagination và search
-  getUsers: async (params?: PaginationParams): Promise<PaginatedResponse<User>> => {
-    const response = await api.get<PaginatedResponse<User>>('/admin/users', { params });
-    return response.data;
+  getUsers: async (params?: PaginationParams): Promise<{ users: User[]; pagination: any; user_stats: any }> => {
+    const response = await api.get<{ success: boolean; data: { users: User[]; pagination: any; user_stats: any } }>('/admin/users', { params });
+    return response.data.data;
   },
 
   // Get user by ID
@@ -23,7 +23,17 @@ export const usersApi = {
 
   // Create new user
   createUser: async (userData: CreateUserRequest): Promise<User> => {
-    const response = await api.post<ApiResponse<User>>('/admin/users', userData);
+    const formData = new FormData();
+    formData.append('email', userData.email);
+    formData.append('username', userData.username);
+    formData.append('password', userData.password);
+    if (userData.first_name) formData.append('first_name', userData.first_name);
+    if (userData.last_name) formData.append('last_name', userData.last_name);
+    if (userData.role) formData.append('role', userData.role);
+    if (userData.organization_id) formData.append('organization_id', userData.organization_id);
+    
+    const response = await api.post<{ success: boolean; data: User; message?: string }>('/admin/users/create', formData);
+    console.log('API Response:', response.data);
     return response.data.data;
   },
 

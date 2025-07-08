@@ -1,23 +1,23 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:16-alpine
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
     environment:
-      POSTGRES_DB: attendee_fastapi_db
-      POSTGRES_USER: attendee_fastapi_user
-      POSTGRES_PASSWORD: attendee_fastapi_password
-      PGDATA: /data/postgres
+      MYSQL_DATABASE: attendee_fastapi_db
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: 11minhan
+      MYSQL_ROOT_PASSWORD: 11minhan
     volumes:
-      - postgres:/data/postgres
+      - mysql:/var/lib/mysql
     networks:
       - attendee_network
     ports:
-      - "5432:5432"
+      - "3306:3306"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U attendee_fastapi_user -d attendee_fastapi_db"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "admin", "-p11minhan"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -38,6 +38,25 @@ services:
       timeout: 5s
       retries: 5
 
+  # Adminer for Database Management
+  adminer:
+    image: adminer:latest
+    networks:
+      - attendee_network
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - ADMINER_DEFAULT_SERVER=mysql
+      - ADMINER_DESIGN=pepa-linha
+      - ADMINER_DEFAULT_DB=attendee_fastapi_db
+      - ADMINER_DEFAULT_USERNAME=admin
+      - ADMINER_DEFAULT_PASSWORD=11minhan
+      - ADMINER_DEFAULT_DRIVER=server
+    restart: unless-stopped
+
   # Build base image chỉ một lần
   attendee-base:
     build:
@@ -56,17 +75,17 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
       attendee-base:
         condition: service_completed_successfully
     environment:
-      - DATABASE_URL=postgresql+asyncpg://attendee_fastapi_user:attendee_fastapi_password@postgres:5432/attendee_fastapi_db
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_USER=attendee_fastapi_user
+      - DATABASE_URL=mysql+pymysql://admin:11minhan@mysql:3306/attendee_fastapi_db
+      - DATABASE_HOST=mysql
+      - DATABASE_PORT=3306
+      - DATABASE_USER=admin
       - REDIS_URL=redis://redis:6379/5
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -82,17 +101,17 @@ services:
     networks:
       - attendee_network
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
       attendee-base:
         condition: service_completed_successfully
     environment:
-      - DATABASE_URL=postgresql+asyncpg://attendee_fastapi_user:attendee_fastapi_password@postgres:5432/attendee_fastapi_db
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_USER=attendee_fastapi_user
+      - DATABASE_URL=mysql+pymysql://admin:11minhan@mysql:3306/attendee_fastapi_db
+      - DATABASE_HOST=mysql
+      - DATABASE_PORT=3306
+      - DATABASE_USER=admin
       - REDIS_URL=redis://redis:6379/5
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -110,17 +129,17 @@ services:
     networks:
       - attendee_network
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
       attendee-base:
         condition: service_completed_successfully
     environment:
-      - DATABASE_URL=postgresql+asyncpg://attendee_fastapi_user:attendee_fastapi_password@postgres:5432/attendee_fastapi_db
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_USER=attendee_fastapi_user
+      - DATABASE_URL=mysql+pymysql://admin:11minhan@mysql:3306/attendee_fastapi_db
+      - DATABASE_HOST=mysql
+      - DATABASE_PORT=3306
+      - DATABASE_USER=admin
       - REDIS_URL=redis://redis:6379/5
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -152,7 +171,7 @@ networks:
     driver: bridge
 
 volumes:
-  postgres:
+  mysql:
   redis:
 
 

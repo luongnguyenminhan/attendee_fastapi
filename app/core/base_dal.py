@@ -1,8 +1,9 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID
 
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from app.core.base_model import BaseEntity
@@ -13,9 +14,13 @@ T = TypeVar("T", bound=BaseEntity)
 class BaseDAL(Generic[T]):
     """Base Data Access Layer with standard CRUD operations"""
 
-    def __init__(self, db: Session, model: Optional[Type[T]] = None):
+    def __init__(self, db: Union[Session, AsyncSession] = None, model: Optional[Type[T]] = None):
         self.db = db
         self.model = model
+
+    def set_session(self, session: Union[Session, AsyncSession]):
+        """Set database session for DAL"""
+        self.db = session
 
     # CRUD Operations
     async def get_by_id(self, id: UUID) -> Optional[T]:
@@ -131,6 +136,50 @@ class BaseDAL(Generic[T]):
     def get_query(self):
         """Get base query for the model"""
         return self.db.query(self.model).filter(self.model.is_deleted == False)
+
+    async def _execute_query(self, query):
+        """Execute query - supports both sync and async sessions"""
+        if hasattr(self.db, "execute"):  # AsyncSession
+            return await self.db.execute(query)
+        else:  # Sync Session
+            return self.db.execute(query)
+
+    async def _get_first(self, query):
+        """Get first result from query"""
+        result = await self._execute_query(query)
+        if hasattr(result, "scalar_one_or_none"):  # AsyncSession result
+            return result.scalar_one_or_none()
+        else:  # Sync Session result
+            return result.first()
+
+    async def _get_all(self, query):
+        """Get all results from query"""
+        result = await self._execute_query(query)
+        if hasattr(result, "scalars"):  # AsyncSession result
+            return result.scalars().all()
+        else:  # Sync Session result
+            return result.all()
+
+    async def _begin_transaction(self):
+        """Begin transaction"""
+        if hasattr(self.db, "begin"):
+            await self.db.begin()
+        else:
+            self.db.begin()
+
+    async def _commit_transaction(self):
+        """Commit transaction"""
+        if hasattr(self.db, "commit"):
+            await self.db.commit()
+        else:
+            self.db.commit()
+
+    async def _rollback_transaction(self):
+        """Rollback transaction"""
+        if hasattr(self.db, "rollback"):
+            await self.db.rollback()
+        else:
+            self.db.rollback()
 
     async def exists(self, **filters) -> bool:
         """Check if entity exists with given filters"""

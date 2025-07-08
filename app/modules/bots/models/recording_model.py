@@ -3,7 +3,7 @@ import string
 from typing import Any, Dict, Optional
 from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.mysql import JSON
 from sqlmodel import Field, Relationship
 
 from app.core.base_enums import (
@@ -31,7 +31,7 @@ class Recording(BaseEntity, table=True):
 
     # Transcription provider
     transcription_provider: Optional[TranscriptionProviders] = Field(default=None)
-    transcription_failure_data: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSONB)
+    transcription_failure_data: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
 
     # Timing
     started_at: Optional[str] = Field(default=None)

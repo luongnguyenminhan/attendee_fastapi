@@ -4,7 +4,7 @@ import string
 from typing import Any, Dict, Optional
 from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.mysql import JSON
 from sqlmodel import Field, Relationship
 
 from app.core.base_model import BaseEntity
@@ -31,9 +31,9 @@ class Utterance(BaseEntity, table=True):
     duration_ms: int = Field(default=0)
 
     # Transcription data
-    transcription: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSONB)
+    transcription: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
     transcription_attempt_count: int = Field(default=0)
-    failure_data: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSONB)
+    failure_data: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
 
     # Source tracking
     source: UtteranceSource = Field(default=UtteranceSource.AUDIO_FROM_BOT)

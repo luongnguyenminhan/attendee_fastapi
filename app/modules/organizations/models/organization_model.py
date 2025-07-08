@@ -2,7 +2,7 @@ import random
 import string
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.mysql import JSON
 from sqlmodel import Field, Relationship
 
 from app.core.base_enums import BaseEnum
@@ -20,6 +20,8 @@ class Organization(BaseEntity, table=True):
 
     # Core fields
     name: str = Field(max_length=255)
+    # TODO: Add status field after database migration
+    # status: OrganizationStatus = Field(default=OrganizationStatus.ACTIVE)
 
     # Credit system
     centicredits: int = Field(default=0)  # Credits in centicredits (1/100th of a credit)
@@ -42,12 +44,13 @@ class Organization(BaseEntity, table=True):
     credit_transactions: List["CreditTransaction"] = Relationship(back_populates="organization")
 
     # Additional metadata
-    settings: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_type=JSONB)
+    settings: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_type=JSON)
 
     # Domain/business logic methods
     def can_create_project(self) -> bool:
         """Check if organization can create new projects"""
-        return self.status == OrganizationStatus.ACTIVE and not self.is_deleted
+        # TODO: Implement after status field is added
+        return not self.is_deleted  # self.status == OrganizationStatus.ACTIVE and not self.is_deleted
 
     def has_sufficient_credits(self, amount: float) -> bool:
         """Check if organization has sufficient credits"""
@@ -69,19 +72,23 @@ class Organization(BaseEntity, table=True):
 
     def suspend(self) -> None:
         """Suspend organization"""
-        self.status = OrganizationStatus.SUSPENDED
+        # TODO: Implement after status field is added
+        pass  # self.status = OrganizationStatus.SUSPENDED
 
     def activate(self) -> None:
         """Activate organization"""
-        self.status = OrganizationStatus.ACTIVE
+        # TODO: Implement after status field is added
+        pass  # self.status = OrganizationStatus.ACTIVE
 
     def can_use_webhooks(self) -> bool:
         """Check if webhooks are enabled and org is active"""
-        return self.is_webhooks_enabled and self.status == OrganizationStatus.ACTIVE
+        # TODO: Implement after status field is added
+        return self.is_webhooks_enabled  # and self.status == OrganizationStatus.ACTIVE
 
     def get_display_name(self) -> str:
         """Get formatted display name"""
-        return f"{self.name} ({self.status.value})"
+        # TODO: Implement after status field is added
+        return f"{self.name} (active)"  # f"{self.name} ({self.status.value})"
 
     def credits(self) -> float:
         """Get credit balance in actual credits (not centicredits)"""

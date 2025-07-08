@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Dict, Optional
 from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.mysql import JSON
 from sqlmodel import Field, Relationship
 
 from app.core.base_enums import WebhookDeliveryAttemptStatus, WebhookTriggerTypes
@@ -72,7 +72,7 @@ class WebhookSubscription(BaseEntity, table=True):
 
     # Webhook configuration
     url: str = Field(max_length=2000)
-    trigger_types: list[WebhookTriggerTypes] = Field(default_factory=list, sa_type=JSONB)
+    trigger_types: list[WebhookTriggerTypes] = Field(default_factory=list, sa_type=JSON)
     is_active: bool = Field(default=True)
 
     # Auto-generated object_id
@@ -144,7 +144,7 @@ class WebhookDeliveryAttempt(BaseEntity, table=True):
     error_message: Optional[str] = Field(default=None, max_length=1000)
 
     # Payload and timing
-    payload: Dict[str, Any] = Field(sa_type=JSONB)
+    payload: Dict[str, Any] = Field(sa_type=JSON)
     attempted_at: Optional[str] = Field(default=None)
     completed_at: Optional[str] = Field(default=None)
 

@@ -3,7 +3,7 @@ import string
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.mysql import JSON
 from sqlmodel import Field, Relationship
 
 from app.core.base_enums import BaseEnum
@@ -33,7 +33,7 @@ class Project(BaseEntity, table=True):
     )
 
     # Additional metadata
-    settings: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_type=JSONB)
+    settings: Optional[Dict[str, Any]] = Field(default_factory=dict, sa_type=JSON)
     description: Optional[str] = Field(default=None, max_length=1000)
 
     # Relationships

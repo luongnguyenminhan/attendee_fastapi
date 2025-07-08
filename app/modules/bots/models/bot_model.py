@@ -5,7 +5,7 @@ import string
 from typing import TYPE_CHECKING, Any, Dict, Optional
 from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.mysql import JSON
 from sqlmodel import Field, Relationship
 
 from app.core.base_enums import BaseEnum, MeetingTypes, RecordingTypes
@@ -82,7 +82,7 @@ class BotEvent(BaseEntity, table=True):
     # Event details
     event_type: BotEventType = Field(index=True)
     event_sub_type: Optional[BotEventSubType] = Field(default=None)
-    metadata_: Dict[str, Any] = Field(default_factory=dict, sa_type=JSONB)
+    metadata_: Dict[str, Any] = Field(default_factory=dict, sa_type=JSON)
 
     # Timing
     requested_bot_action_taken_at: Optional[str] = Field(default=None)
@@ -152,8 +152,8 @@ class Bot(BaseEntity, table=True):
     )
 
     # Configuration and metadata
-    settings: Dict[str, Any] = Field(default_factory=dict, sa_type=JSONB)
-    metadata_: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSONB)
+    settings: Dict[str, Any] = Field(default_factory=dict, sa_type=JSON)
+    metadata_: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
 
     # Timing and heartbeat
     first_heartbeat_timestamp: Optional[int] = Field(default=None)
@@ -342,7 +342,7 @@ class BotDebugScreenshot(BaseEntity, table=True):
     __tablename__ = "botdebugscreenshot"
 
     # Core fields
-    metadata_: Dict[str, Any] = Field(default_factory=dict, sa_type=JSONB)
+    metadata_: Dict[str, Any] = Field(default_factory=dict, sa_type=JSON)
     file_url: Optional[str] = Field(default=None, max_length=1000)
 
     # Foreign key

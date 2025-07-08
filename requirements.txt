@@ -6,8 +6,7 @@ pydantic-settings==2.1.0
 
 # Database
 sqlmodel==0.0.14
-asyncpg==0.29.0
-psycopg2-binary==2.9.7
+PyMySQL==1.1.0
 alembic==1.12.1
 greenlet==3.0.1
 

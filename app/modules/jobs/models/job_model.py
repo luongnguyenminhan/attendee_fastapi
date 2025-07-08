@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional
 
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.mysql import JSON
 from sqlmodel import Field
 
 from app.core.base_enums import BaseEnum
@@ -23,8 +23,8 @@ class Job(BaseEntity, table=True):
     status: JobStatus = Field(default=JobStatus.PENDING, index=True)
 
     # Job data and results
-    parameters: Dict[str, Any] = Field(default_factory=dict, sa_type=JSONB)
-    result: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSONB)
+    parameters: Dict[str, Any] = Field(default_factory=dict, sa_type=JSON)
+    result: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
     error_message: Optional[str] = Field(default=None, max_length=1000)
 
     # Timing

@@ -184,15 +184,19 @@ class OrganizationRepo:
 
     async def get_organization_stats(self) -> Dict[str, Any]:
         """Get organization statistics"""
-        active_count = await self.dal.count_by_status(OrganizationStatus.ACTIVE)
-        suspended_count = await self.dal.count_by_status(OrganizationStatus.SUSPENDED)
-        inactive_count = await self.dal.count_by_status(OrganizationStatus.INACTIVE)
+        # Temporarily disable status-based counting until migration
+        # active_count = await self.dal.count_by_status(OrganizationStatus.ACTIVE)
+        # suspended_count = await self.dal.count_by_status(OrganizationStatus.SUSPENDED)
+        # inactive_count = await self.dal.count_by_status(OrganizationStatus.INACTIVE)
+
+        # Get total count instead
+        total_orgs, total_count = await self.dal.get_all_with_pagination(0, 1000)
         total_credits = await self.dal.get_total_credits()
 
         return {
-            "total_organizations": active_count + suspended_count + inactive_count,
-            "active_organizations": active_count,
-            "suspended_organizations": suspended_count,
-            "inactive_organizations": inactive_count,
+            "total_count": total_count,
+            "active_count": total_count,  # Assume all active for now
+            "suspended_count": 0,
+            "inactive_count": 0,
             "total_credits": total_credits,
         }

@@ -3,7 +3,7 @@ import string
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.mysql import JSON
 from sqlmodel import Field, Relationship
 
 from app.core.base_enums import ParticipantEventTypes
@@ -27,7 +27,7 @@ class Participant(BaseEntity, table=True):
     is_active: bool = Field(default=True)
 
     # Metadata
-    additional_data: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSONB)
+    additional_data: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
 
     # Auto-generated object_id
     object_id: str = Field(
@@ -114,7 +114,7 @@ class ParticipantEvent(BaseEntity, table=True):
     timestamp_ms: int = Field(index=True)
 
     # Additional data
-    event_data: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSONB)
+    event_data: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON)
 
     # Auto-generated object_id
     object_id: str = Field(

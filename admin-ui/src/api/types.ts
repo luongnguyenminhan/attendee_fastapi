@@ -25,20 +25,34 @@ export interface PaginatedResponse<T> {
 export interface User {
   id: string;
   email: string;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
   name?: string;
   is_active: boolean;
   is_superuser: boolean;
   created_at: string;
   updated_at: string;
+  create_date?: string;
+  update_date?: string;
+  role?: {
+    value: string;
+  };
+  status?: {
+    value: string;
+  };
   organization_id?: string;
   organization?: Organization;
 }
 
 export interface CreateUserRequest {
   email: string;
-  name?: string;
+  username: string;
   password: string;
-  is_active?: boolean;
+  first_name?: string;
+  last_name?: string;
+  role?: 'user' | 'admin';
   organization_id?: string;
 }
 

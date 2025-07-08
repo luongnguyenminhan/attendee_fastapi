@@ -1,5 +1,5 @@
 /* eslint-disable qwik/no-use-visible-task */
-import { component$, useSignal, useVisibleTask$ } from "@builder.io/qwik";
+import { component$, useSignal, useVisibleTask$, $ } from "@builder.io/qwik";
 import type { DocumentHead } from "@builder.io/qwik-city";
 import { Card, CardHeader, CardBody, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -17,6 +17,7 @@ import {
   EmptyState
 } from '../../components/ui/table';
 import { FaIcon } from '../../components/ui/fa-icon';
+import { CreateUserModal } from '../../components/ui/create-user-modal';
 import { 
   faUsers,
   faPlus,
@@ -33,12 +34,13 @@ export default component$(() => {
   const error = useSignal<string | null>(null);
   const searchQuery = useSignal("");
   const statusFilter = useSignal("all");
+  const showCreateModal = useSignal(false);
 
   // Load users từ API
   useVisibleTask$(async () => {
     try {
       const response = await adminApi.users.getUsers();
-      users.value = response.items || [];
+      users.value = response.users || [];
     } catch (err) {
       error.value = 'Failed to load users';
       console.error('Users load error:', err);
@@ -54,8 +56,30 @@ export default component$(() => {
     return matchesSearch && matchesStatus;
   });
 
+  // Handler functions
+  const handleOpenCreateModal = $(() => {
+    showCreateModal.value = true;
+  });
+
+  const handleCloseCreateModal = $(() => {
+    showCreateModal.value = false;
+  });
+
+  const handleUserCreated = $(async () => {
+    // Reload users list
+    try {
+      loading.value = true;
+      const response = await adminApi.users.getUsers();
+      users.value = response.users || [];
+    } catch (err) {
+      console.error('Reload users error:', err);
+    } finally {
+      loading.value = false;
+    }
+  });
+
   // Mobile card render function
-  const renderMobileUserCard = (user: User) => (
+  const renderMobileUserCard = $((user: User) => (
     <div class="space-y-3">
       <div class="flex justify-between items-start">
         <div class="flex-1 min-w-0">
@@ -91,7 +115,7 @@ export default component$(() => {
         </Button>
       </div>
     </div>
-  );
+  ));
 
   if (loading.value) {
     return (
@@ -137,7 +161,10 @@ export default component$(() => {
           <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Users</h1>
           <p class="text-sm sm:text-base text-gray-600 mt-1">Quản lý người dùng hệ thống</p>
         </div>
-        <Button class="w-full sm:w-auto">
+        <Button 
+          class="w-full sm:w-auto"
+          onClick$={handleOpenCreateModal}
+        >
           <FaIcon icon={faPlus} class="h-4 w-4 sm:mr-2" />
           <span class="hidden sm:inline">Add User</span>
           <span class="sm:hidden">Add</span>
@@ -238,6 +265,13 @@ export default component$(() => {
           )}
         </CardBody>
       </Card>
+
+      {/* Create User Modal */}
+      <CreateUserModal 
+        isOpen={showCreateModal.value}
+        onClose$={handleCloseCreateModal}
+        onUserCreated$={handleUserCreated}
+      />
     </div>
   );
 });

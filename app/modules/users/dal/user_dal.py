@@ -2,7 +2,6 @@ from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.base_dal import BaseDAL
 from app.modules.users.models.user_model import User, UserRole, UserStatus
@@ -11,8 +10,8 @@ from app.modules.users.models.user_model import User, UserRole, UserStatus
 class UserDAL(BaseDAL[User]):
     """Data Access Layer for User entity"""
 
-    def __init__(self, db: AsyncSession):
-        super().__init__(db, User)
+    def __init__(self):
+        super().__init__(None, User)
 
     async def get_by_email(self, email: str) -> Optional[User]:
         """Get user by email"""

@@ -2,7 +2,7 @@ import re
 from typing import Any, Dict, List
 from uuid import UUID
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions.exception import (
     ConflictException,
@@ -18,9 +18,10 @@ from app.utils.security import get_password_hash, verify_password
 class UserRepo:
     """Repository layer for User business logic"""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.user_dal = UserDAL(db)
+        self.user_dal = UserDAL()
+        self.user_dal.set_session(db)
 
     def _validate_email(self, email: str) -> None:
         """Validate email format"""

@@ -1,7 +1,7 @@
+import asyncio
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 from sqlmodel import Session, SQLModel, create_engine
 
@@ -30,24 +30,24 @@ from app.modules.users.models import User
 
 settings = get_settings()
 
-# Async engine for production
-engine = create_async_engine(
-    settings.ASYNC_DATABASE_URL,
-    echo=settings.DATABASE_ECHO,
-    poolclass=NullPool,
-)
-
-# Sync engine for testing and migrations
-sync_engine = create_engine(
+# MySQL với PyMySQL - sử dụng sync engine
+engine = create_engine(
     settings.DATABASE_URL,
     echo=settings.DATABASE_ECHO,
     poolclass=NullPool,
 )
 
+# Alias sync_engine for backward compatibility
+sync_engine = engine
 
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    async with AsyncSession(engine) as session:
+
+async def get_session() -> AsyncGenerator[Session, None]:
+    """Async wrapper for sync session to maintain compatibility"""
+    session = Session(engine)
+    try:
         yield session
+    finally:
+        session.close()
 
 
 def get_sync_session() -> Session:
@@ -60,23 +60,22 @@ get_db = get_session
 
 
 @asynccontextmanager
-async def get_session_context() -> AsyncGenerator[AsyncSession, None]:
-    """Context manager for database sessions"""
-    async with AsyncSession(engine) as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
+async def get_session_context() -> AsyncGenerator[Session, None]:
+    """Async context manager for database sessions"""
+    session = Session(engine)
+    try:
+        yield session
+        await asyncio.get_event_loop().run_in_executor(None, session.commit)
+    except Exception:
+        await asyncio.get_event_loop().run_in_executor(None, session.rollback)
+        raise
+    finally:
+        await asyncio.get_event_loop().run_in_executor(None, session.close)
 
 
 async def create_tables():
     """Create all tables"""
-    async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
+    await asyncio.get_event_loop().run_in_executor(None, SQLModel.metadata.create_all, engine)
 
 
 def create_tables_sync():
@@ -86,8 +85,7 @@ def create_tables_sync():
 
 async def drop_tables():
     """Drop all tables (be careful!)"""
-    async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.drop_all)
+    await asyncio.get_event_loop().run_in_executor(None, SQLModel.metadata.drop_all, engine)
 
 
 def drop_tables_sync():

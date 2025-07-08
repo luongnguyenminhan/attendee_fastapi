@@ -13,7 +13,7 @@ class OrganizationDAL(BaseDAL[Organization]):
     """Organization Data Access Layer"""
 
     def __init__(self):
-        super().__init__(Organization)
+        super().__init__(None, Organization)
 
     async def get_by_name(self, name: str) -> Optional[Organization]:
         """Get organization by name"""
@@ -71,6 +71,19 @@ class OrganizationDAL(BaseDAL[Organization]):
         query = select(func.count(self.model.id)).where(self.model.status == status, ~self.model.is_deleted)
         result = await self._execute_query(query)
         return result.scalar() or 0
+
+    async def get_all_with_pagination(self, skip: int = 0, limit: int = 20):
+        """Get organizations with pagination"""
+        # Get total count
+        count_query = select(func.count(self.model.id)).where(~self.model.is_deleted)
+        count_result = await self._execute_query(count_query)
+        total = count_result.scalar() or 0
+
+        # Get items
+        items_query = select(self.model).where(~self.model.is_deleted).offset(skip).limit(limit)
+        items = await self._get_all(items_query)
+
+        return items, total
 
     async def bulk_update_status(self, organization_ids: List[str], status: OrganizationStatus) -> bool:
         """Bulk update status for multiple organizations"""
