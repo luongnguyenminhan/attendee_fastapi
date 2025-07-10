@@ -3,18 +3,16 @@ import { Modal } from "./modal";
 import { Button } from "./button";
 import { adminApi } from "../../api";
 import type { CreateUserRequest } from "../../api/types";
+import { useContext, createContextId } from "@builder.io/qwik";
 
 interface CreateUserModalProps {
   isOpen: boolean;
   onClose$: () => void;
-  onUserCreated$: () => void;
 }
 
-export const CreateUserModal = component$<CreateUserModalProps>(({ 
-  isOpen, 
-  onClose$, 
-  onUserCreated$ 
-}) => {
+export const CreateUserModalEventContext = createContextId<any>("create-user-modal-event");
+
+export const CreateUserModal = component$<CreateUserModalProps>(({ isOpen }) => {
   const isLoading = useSignal(false);
   const error = useSignal<string | null>(null);
   const success = useSignal<string | null>(null);
@@ -27,6 +25,8 @@ export const CreateUserModal = component$<CreateUserModalProps>(({
   const lastName = useSignal("");
   const role = useSignal("user");
   const organizationId = useSignal("");
+
+  const modalEvent = useContext(CreateUserModalEventContext);
 
   const handleSubmit = $(async (e: Event) => {
     e.preventDefault();
@@ -45,7 +45,6 @@ export const CreateUserModal = component$<CreateUserModalProps>(({
       if (password.value.length < 6) {
         throw new Error("Password phải có ít nhất 6 ký tự");
       }
-
       const userData: CreateUserRequest = {
         email: email.value.trim(),
         username: username.value.trim(),
@@ -54,33 +53,24 @@ export const CreateUserModal = component$<CreateUserModalProps>(({
         last_name: lastName.value.trim(),
         role: role.value as "user" | "admin",
       };
-
       if (organizationId.value.trim()) {
         userData.organization_id = organizationId.value.trim();
       }
-
       const result = await adminApi.users.createUser(userData);
+      // context7: kiểm tra lỗi trả về dạng object {message, ...} hoặc throw nếu không phải user
+      if (typeof result !== 'object' || !result || Array.isArray(result)) {
+        throw new Error("Phản hồi không hợp lệ từ server");
+      }
+      if ('message' in result && typeof result.message === 'string') {
+        throw new Error(result.message);
+      }
       console.log('Create user result:', result);
       
       success.value = `User '${username.value}' được tạo thành công!`;
-      
-      // Reset form and close modal
-      setTimeout(async () => {
-        email.value = "";
-        username.value = "";
-        password.value = "";
-        firstName.value = "";
-        lastName.value = "";
-        role.value = "user";
-        organizationId.value = "";
-        
-        // Trigger user list reload
-        await onUserCreated$();
-        
-        // Close modal
-        onClose$();
+      // Dùng signal để trigger callback ngoài scope $()
+      setTimeout(() => {
+        resetAndClose();
       }, 1500);
-      
     } catch (err: any) {
       console.error('Create user error:', err);
       console.error('Error response:', err.response?.data);
@@ -99,8 +89,8 @@ export const CreateUserModal = component$<CreateUserModalProps>(({
     }
   });
 
-  const handleClose = $(() => {
-    // Reset form when closing
+  // Refactor: emit custom events thay vì truyền callback function props để tránh lỗi Qwik serialization
+  const resetAndClose = $(() => {
     email.value = "";
     username.value = "";
     password.value = "";
@@ -110,13 +100,18 @@ export const CreateUserModal = component$<CreateUserModalProps>(({
     organizationId.value = "";
     error.value = null;
     success.value = null;
-    onClose$();
+    // Emit event thay vì gọi callback
+    modalEvent.emit("userCreated");
+    modalEvent.emit("close");
+  });
+
+  const handleClose = $(() => {
+    resetAndClose();
   });
 
   return (
     <Modal 
       isOpen={isOpen} 
-      onClose$={handleClose} 
       title="Tạo người dùng mới" 
       size="lg"
     >
@@ -127,7 +122,6 @@ export const CreateUserModal = component$<CreateUserModalProps>(({
             <p class="text-sm text-red-800">{error.value}</p>
           </div>
         )}
-        
         {success.value && (
           <div class="bg-green-50 border border-green-200 rounded-md p-3">
             <p class="text-sm text-green-800">{success.value}</p>
@@ -252,14 +246,13 @@ export const CreateUserModal = component$<CreateUserModalProps>(({
             type="button" 
             variant="outline" 
             onClick$={handleClose}
-            disabled={isLoading.value}
+            class={isLoading.value ? 'opacity-50 pointer-events-none' : ''}
           >
             Hủy
           </Button>
           <Button 
             type="submit" 
-            disabled={isLoading.value}
-            class="min-w-[120px]"
+            class={`min-w-[120px] ${isLoading.value ? 'opacity-50 pointer-events-none' : ''}`}
           >
             {isLoading.value ? (
               <div class="flex items-center gap-2">

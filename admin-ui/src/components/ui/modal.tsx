@@ -1,20 +1,22 @@
-import { component$, Slot } from "@builder.io/qwik";
+import { component$, Slot, useContext } from "@builder.io/qwik";
+import { CreateUserModalEventContext } from "./create-user-modal";
 
 interface ModalProps {
   isOpen: boolean;
-  onClose$: () => void;
   title: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   class?: string;
 }
 
-export const Modal = component$<ModalProps>(({ isOpen, onClose$, title, size = 'md', class: className }) => {
+export const Modal = component$<ModalProps>(({ isOpen, title, size = 'md', class: className }) => {
   const sizeClasses = {
     sm: 'max-w-sm',
     md: 'max-w-md',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl'
   };
+
+  const modalEvent = useContext(CreateUserModalEventContext);
 
   if (!isOpen) return null;
 
@@ -23,9 +25,8 @@ export const Modal = component$<ModalProps>(({ isOpen, onClose$, title, size = '
       {/* Backdrop */}
       <div 
         class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-        onClick$={onClose$}
+        onClick$={() => modalEvent.emit("close")}
       ></div>
-      
       {/* Modal */}
       <div class="flex min-h-full items-center justify-center p-4">
         <div class={`
@@ -37,7 +38,7 @@ export const Modal = component$<ModalProps>(({ isOpen, onClose$, title, size = '
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-semibold text-gray-900">{title}</h3>
               <button
-                onClick$={onClose$}
+                onClick$={() => modalEvent.emit("close")}
                 class="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -46,7 +47,6 @@ export const Modal = component$<ModalProps>(({ isOpen, onClose$, title, size = '
               </button>
             </div>
           </div>
-          
           {/* Body */}
           <div class="px-6 py-4">
             <Slot />

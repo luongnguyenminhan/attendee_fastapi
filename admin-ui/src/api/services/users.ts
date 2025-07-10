@@ -3,7 +3,6 @@ import type {
   User,
   CreateUserRequest,
   UpdateUserRequest,
-  PaginatedResponse,
   PaginationParams,
   ApiResponse
 } from '../types';

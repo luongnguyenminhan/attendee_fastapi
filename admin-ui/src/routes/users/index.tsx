@@ -27,6 +27,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { adminApi } from '../../api';
 import type { User } from '../../api/types';
+import { useContextProvider, useStore } from "@builder.io/qwik";
+import { CreateUserModalEventContext } from '../../components/ui/create-user-modal';
 
 export default component$(() => {
   const users = useSignal<User[]>([]);
@@ -35,6 +37,14 @@ export default component$(() => {
   const searchQuery = useSignal("");
   const statusFilter = useSignal("all");
   const showCreateModal = useSignal(false);
+  // Provide event context for modal communication
+  const modalEvent = useStore({
+    emit: (event: string) => {
+      if (event === "close") showCreateModal.value = false;
+      if (event === "userCreated") handleUserCreated();
+    }
+  });
+  useContextProvider(CreateUserModalEventContext, modalEvent);
 
   // Load users từ API
   useVisibleTask$(async () => {
@@ -59,10 +69,6 @@ export default component$(() => {
   // Handler functions
   const handleOpenCreateModal = $(() => {
     showCreateModal.value = true;
-  });
-
-  const handleCloseCreateModal = $(() => {
-    showCreateModal.value = false;
   });
 
   const handleUserCreated = $(async () => {
@@ -269,8 +275,7 @@ export default component$(() => {
       {/* Create User Modal */}
       <CreateUserModal 
         isOpen={showCreateModal.value}
-        onClose$={handleCloseCreateModal}
-        onUserCreated$={handleUserCreated}
+        onClose$={() => showCreateModal.value = false}
       />
     </div>
   );
@@ -284,4 +289,4 @@ export const head: DocumentHead = {
       content: "Manage system users",
     },
   ],
-}; 
+};

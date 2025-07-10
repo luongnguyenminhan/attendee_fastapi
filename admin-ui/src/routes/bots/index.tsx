@@ -1,6 +1,6 @@
 import { component$ } from "@builder.io/qwik";
 import type { DocumentHead } from "@builder.io/qwik-city";
-import { Card, CardHeader, CardBody, CardTitle } from '../../components/ui/card';
+import { Card, CardBody } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { FaIcon } from '../../components/ui/fa-icon';
 import { 
