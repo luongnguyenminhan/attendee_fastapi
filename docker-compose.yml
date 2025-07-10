@@ -166,6 +166,20 @@ services:
     command: ["/bin/bash", "-c", "cd /attendee_fastapi && python -m flower --app=app.jobs.celery_app flower --port=5555"]
     restart: unless-stopped
 
+  # Admin UI (QwikJS)
+  admin-ui:
+    build:
+      context: ./admin-ui
+      dockerfile: Dockerfile
+    image: admin-ui:latest
+    networks:
+      - attendee_network
+    ports:
+      - "3000:5173"
+    restart: unless-stopped
+    depends_on:
+      - attendee-app
+
 networks:
   attendee_network:
     driver: bridge
