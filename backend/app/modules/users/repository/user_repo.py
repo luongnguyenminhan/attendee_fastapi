@@ -12,6 +12,7 @@ from app.exceptions.exception import (
 from app.middlewares.translation_manager import _
 from app.modules.users.dal.user_dal import UserDAL
 from app.modules.users.models.user_model import User, UserRole, UserStatus
+from app.utils.email_utils import send_password_reset_email, send_verification_email
 from app.utils.security import get_password_hash, verify_password
 
 
@@ -229,3 +230,38 @@ class UserRepo:
     async def count_active_users(self) -> int:
         """Count active users"""
         return await self.user_dal.count_by_status(UserStatus.ACTIVE)
+
+    async def send_password_reset_email(self, email: str, background_tasks=None):
+        """Send password reset email (TODO: implement logic)"""
+        # TODO: Generate reset_code, save to DB, etc.
+        reset_code = "123456"  # TODO: generate real code
+        send_password_reset_email(email, reset_code, background_tasks)
+        # TODO: Save reset_code to DB for later verification
+        return True
+
+    async def confirm_reset_password(self, email: str, reset_code: str, new_password: str):
+        """Confirm password reset (TODO: implement logic)"""
+        # TODO: Validate reset_code, update password
+        # For now, just print
+        print(f"[TODO] Confirm reset for {email} with code {reset_code} and new password {new_password}")
+        return True
+
+    async def resend_verification_email(self, email: str, background_tasks=None):
+        """Resend verification email (TODO: implement logic)"""
+        verification_code = "654321"  # TODO: generate real code
+        send_verification_email(email, verification_code, background_tasks)
+        # TODO: Save verification_code to DB for later verification
+        return True
+
+    async def verify_email(self, email: str, verification_code: str):
+        """Verify email with code (TODO: implement logic)"""
+        # TODO: Validate verification_code, mark email as verified
+        print(f"[TODO] Verify email {email} with code {verification_code}")
+        return True
+
+    async def login_with_google(self, id_token: str):
+        """Login with Google OAuth (TODO: implement logic)"""
+        # TODO: Validate id_token, get user info, create or get user
+        print(f"[TODO] Login with Google id_token: {id_token}")
+        # For now, raise not implemented
+        raise NotImplementedError("Google login not implemented yet")

@@ -3,7 +3,7 @@ FROM --platform=linux/amd64 ubuntu:22.04 AS base
 SHELL ["/bin/bash", "-c"]
 
 ENV project=attendee_fastapi
-ENV cwd=/$project
+ENV cwd=/$project/backend
 
 WORKDIR $cwd
 
@@ -135,7 +135,7 @@ RUN chmod +x /opt/bin/entrypoint.sh
 RUN adduser root pulse-access
 
 # Set Python path
-ENV PYTHONPATH=/attendee_fastapi
+ENV PYTHONPATH=/attendee_fastapi/backend
 
 # Expose port
 EXPOSE 8000

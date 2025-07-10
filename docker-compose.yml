@@ -69,7 +69,7 @@ services:
   attendee-app:
     image: attendee-fastapi:latest
     volumes:
-      - .:/attendee_fastapi
+      - ./backend:/attendee_fastapi/backend
     networks:
       - attendee_network
     ports:
@@ -89,7 +89,7 @@ services:
       - REDIS_URL=redis://redis:6379/5
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - PYTHONPATH=/attendee_fastapi
+      - PYTHONPATH=/attendee_fastapi/backend
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     restart: unless-stopped
 
@@ -97,7 +97,7 @@ services:
   attendee-worker:
     image: attendee-fastapi:latest
     volumes:
-      - .:/attendee_fastapi
+      - ./backend:/attendee_fastapi/backend
     networks:
       - attendee_network
     depends_on:
@@ -125,7 +125,7 @@ services:
   attendee-scheduler:
     image: attendee-fastapi:latest
     volumes:
-      - .:/attendee_fastapi
+      - ./backend:/attendee_fastapi/backend
     networks:
       - attendee_network
     depends_on:
@@ -151,7 +151,7 @@ services:
   attendee-flower:
     image: attendee-fastapi:latest
     volumes:
-      - .:/attendee_fastapi
+      - ./backend:/attendee_fastapi/backend
     networks:
       - attendee_network
     ports:
@@ -163,7 +163,7 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - PYTHONPATH=/attendee_fastapi
-    command: ["/bin/bash", "-c", "cd /attendee_fastapi && python -m flower --app=app.jobs.celery_app flower --port=5555"]
+    command: ["/bin/bash", "-c", "cd /attendee_fastapi/backend && python -m flower --app=app.jobs.celery_app flower --port=5555"]
     restart: unless-stopped
 
   # Admin UI (QwikJS)

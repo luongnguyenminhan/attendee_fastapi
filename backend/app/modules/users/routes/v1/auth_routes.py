@@ -1,17 +1,20 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 
-from app.core.base_model import APIResponse
+from app.core.base_model import APIResponse, RequestSchema
 from app.exceptions.handlers import handle_exceptions
 from app.middlewares.translation_manager import _
 from app.modules.users.dependencies import get_user_repo
 from app.modules.users.repository.user_repo import UserRepo
 from app.modules.users.schemas import (
     ChangePasswordRequest,
+    ConfirmResetPasswordRequest,
     CreateUserRequest,
+    EmailVerificationRequest,
     LoginRequest,
     LoginResponse,
+    ResetPasswordRequest,
     UserProfileResponse,
     UserResponse,
 )
@@ -123,3 +126,59 @@ async def logout_user(
     # For now, just return success
 
     return APIResponse.success(message=_("logout_successful"))
+
+
+@router.post("/password-reset", response_model=APIResponse[None])
+@handle_exceptions
+async def password_reset(request: ResetPasswordRequest, repo: UserRepo = Depends(get_user_repo), background_tasks: BackgroundTasks = None):
+    """Send password reset email"""
+    await repo.send_password_reset_email(request.email, background_tasks)
+    return APIResponse.success(message=_("password_reset_email_sent"))
+
+
+@router.post("/password-reset-confirm", response_model=APIResponse[None])
+@handle_exceptions
+async def password_reset_confirm(request: ConfirmResetPasswordRequest, repo: UserRepo = Depends(get_user_repo)):
+    """Confirm password reset"""
+    await repo.confirm_reset_password(request.email, request.reset_code, request.new_password)
+    return APIResponse.success(message=_("password_reset_successful"))
+
+
+@router.post("/resend-verification", response_model=APIResponse[None])
+@handle_exceptions
+async def resend_verification(request: ResetPasswordRequest, repo: UserRepo = Depends(get_user_repo), background_tasks: BackgroundTasks = None):
+    """Resend verification email"""
+    await repo.resend_verification_email(request.email, background_tasks)
+    return APIResponse.success(message=_("verification_email_sent"))
+
+
+@router.post("/email-verify", response_model=APIResponse[None])
+@handle_exceptions
+async def email_verify(request: EmailVerificationRequest, repo: UserRepo = Depends(get_user_repo)):
+    """Verify email with code"""
+    await repo.verify_email(request.email, request.verification_code)
+    return APIResponse.success(message=_("email_verified_successful"))
+
+
+class GoogleLoginRequest(RequestSchema):
+    id_token: str
+
+
+@router.post("/google", response_model=APIResponse[LoginResponse])
+@handle_exceptions
+async def google_login(request: GoogleLoginRequest, repo: UserRepo = Depends(get_user_repo)):
+    """Login with Google OAuth"""
+    user = await repo.login_with_google(request.id_token)
+    access_token = create_access_token(
+        data={
+            "sub": user.email,
+            "user_id": str(user.id),
+            "organization_id": (str(user.organization_id) if user.organization_id else None),
+        }
+    )
+    login_response = LoginResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserProfileResponse.from_orm(user),
+    )
+    return APIResponse.success(data=login_response, message=_("login_successful"))
